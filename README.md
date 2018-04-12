@@ -23,3 +23,81 @@ Worktips [WTIP] is a CryptoNight Lite Variant 1 POW algorithm based coin with a 
 - Emission speed factor: 18
 - P2P port: 17239
 - RPC port: 18238
+
+## How to compile
+
+### Compile on Linux Ubuntu 16
+
+**1. Install dependencies**
+
+- run an update
+
+``
+sudo apt-get update
+``
+
+- get all dependencies
+
+``
+sudo apt-get install build-essential python-dev gcc g++ git cmake libboost-all-dev librocksdb-dev
+``
+
+**2. Get the coin**
+
+``
+git clone https://github.com/Vordas/worktips.git worktips
+``
+
+**3. CHMOD**
+
+- navigate to:
+
+``
+cd worktips/external/rocksdb/build_tools
+``
+
+- execute the following commands:
+
+``
+chmod +x build_detect_platform
+``
+
+``
+chmod +x version.sh
+``
+
+**4. Build executables**
+
+- Navigate back to repo folder 
+
+``
+cd
+``
+
+``
+cd worktips
+``
+
+- prepare the build
+
+``
+mkdir build && cd $_
+``
+
+``
+cmake ..
+``
+
+- Export flags
+
+``
+export CXXFLAGS="-std=gnu++11"
+``
+
+- Make/Build
+
+``
+make
+``
+
+_Your executables will be located in `build/src` folder._
