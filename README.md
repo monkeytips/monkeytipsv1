@@ -101,3 +101,98 @@ make
 ``
 
 _Your executables will be located in `build/src` folder._
+
+
+### Compile on Linux Ubuntu 14
+
+**1. Install dependencies**
+
+- run an update
+
+``
+sudo apt-get update
+``
+
+- get all dependencies
+
+``
+sudo apt-get install -y build-essential python-dev git cmake libboost1.55-all-dev libgflags-dev libsnappy-dev zlib1g-dev libbz2-dev libgflags-dev libgflags2 gcc-4.8 g++-4.8
+``
+
+**2. Install RocksDB database (long compilation)**
+
+``
+git clone https://github.com/facebook/rocksdb.git
+``
+
+``
+cd rocksdb
+``
+
+``
+make all
+``
+
+**3. Get the coin**
+
+``
+cd
+``
+
+``
+git clone https://github.com/Vordas/worktips.git worktips
+``
+
+**4. CHMOD**
+
+- navigate to:
+
+``
+cd worktips/external/rocksdb/build_tools
+``
+
+- execute the following commands:
+
+``
+chmod +x build_detect_platform
+``
+
+``
+chmod +x version.sh
+``
+
+**5. Build executables (long compilation)**
+
+- Navigate back to repo folder 
+
+``
+cd
+``
+
+``
+cd worktips
+``
+
+- prepare the build
+
+``
+mkdir build && cd $_
+``
+
+``
+cmake ..
+``
+
+- Export flags
+
+``
+export CXXFLAGS="-std=gnu++11"
+``
+
+- Make/Build
+
+``
+make
+``
+
+_Your executables will be located in `build/src` folder._
