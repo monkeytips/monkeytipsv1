@@ -195,7 +195,7 @@ export CXXFLAGS="-std=gnu++11"
 make
 ``
 
-### Compile on Windows 10
+### Compile on Windows 7/8/10
 
 **1. Environment**
 
