@@ -29,7 +29,7 @@ int main(int argc, char **argv)
 
     Config config = parseArguments(argc, argv);
 
-    /* User requested --help or --version, or invalid arguments */
+    /* User requested --help or --version */
     if (config.exit)
     {
         return 0;
@@ -77,19 +77,17 @@ int main(int argc, char **argv)
                                    logger.getLogger());
 
     /* Run the interactive wallet interface */
-    run(wallet, *node, config);
+    run(wallet, *node);
 }
 
-void run(CryptoNote::WalletGreen &wallet, CryptoNote::INode &node,
-         Config &config)
+void run(CryptoNote::WalletGreen &wallet, CryptoNote::INode &node)
 {
     std::cout << InformationMsg("Worktips v" + std::string(PROJECT_VERSION)
                               + " Simplewallet") << std::endl;
 
     /* Open/import/generate the wallet */
-    Action action = getAction(config);
-    std::shared_ptr<WalletInfo> walletInfo = handleAction(wallet, action, 
-                                                          config);
+    Action action = getAction();
+    std::shared_ptr<WalletInfo> walletInfo = handleAction(wallet, action);
 
     bool alreadyShuttingDown = false;
 
@@ -103,99 +101,63 @@ void run(CryptoNote::WalletGreen &wallet, CryptoNote::INode &node,
         }
     });
 
-    while (node.getLastKnownBlockHeight() == 0)
+    if (node.getLastKnownBlockHeight() == 0)
     {
-        std::cout << WarningMsg("It looks like worktipsd isn't open!")
+        std::cout << WarningMsg("It looks like Worktipsd isn't open!")
                   << std::endl << std::endl
-                  << WarningMsg("Ensure worktipsd is open and has finished "
+                  << WarningMsg("Ensure Worktipsd is open and has finished "
                                 "initializing.")
                   << std::endl
                   << WarningMsg("If it's still not working, try restarting "
-                                "worktipsd. The daemon sometimes gets stuck.") 
+                                "Worktipsd. The daemon sometimes gets stuck.") 
                   << std::endl
-                  << WarningMsg("Alternatively, perhaps worktipsd can't "
+                  << WarningMsg("Alternatively, perhaps Worktipsd can't "
                                 "communicate with any peers.")
                   << std::endl << std::endl
                   << WarningMsg("The wallet can't function until it can "
                                 "communicate with the network.")
-                  << std::endl << std::endl;
+                  << std::endl
+                  << InformationMsg("Hit any key to exit: ");
 
-        bool proceed = false;
+        std::cin.get();
 
-        while (true)
-        {
-            std::cout << "[" << InformationMsg("T") << "]ry again, "
-                      << "[" << InformationMsg("E") << "]xit, or "
-                      << "[" << InformationMsg("C") << "]ontinue anyway?: ";
-
-            std::string answer;
-            std::getline(std::cin, answer);
-
-            char c = std::tolower(answer[0]);
-
-            /* Lets people spam enter in the transaction screen */
-            if (c == 't' || c == '\0')
-            {
-                break;
-            }
-            else if (c == 'e' || c == std::ifstream::traits_type::eof())
-            {
-                shutdown(walletInfo->wallet, node, alreadyShuttingDown);
-                return;
-            }
-            else if (c == 'c')
-            {
-                proceed = true;
-                break;
-            }
-            else
-            {
-                std::cout << WarningMsg("Bad input: ") << InformationMsg(answer)
-                          << WarningMsg(" - please enter either T, E, or C.")
-                          << std::endl;
-            }
-        }
-
-        if (proceed)
-        {
-            break;
-        }
-
-        std::cout << std::endl;
-    }
-
-    /* Scan the chain for new transactions. In the case of an imported 
-       wallet, we need to scan the whole chain to find any transactions. 
-       If we opened the wallet however, we just need to scan from when we 
-       last had it open. If we are generating a wallet, there is no need
-       to check for transactions as there is no way the wallet can have
-       received any money yet. */
-    if (action != Generate)
-    {
-        findNewTransactions(node, walletInfo);
-
+        shutdown(walletInfo->wallet, node, alreadyShuttingDown);
     }
     else
     {
-        std::cout << InformationMsg("Your wallet is syncing with the "
-                                    "network in the background.")
-                  << std::endl
-                  << InformationMsg("Until this is completed new "
-                                    "transactions might not show up.")
-                  << std::endl
-                  << InformationMsg("Use bc_height to check the progress.")
-                  << std::endl << std::endl;
+        /* Scan the chain for new transactions. In the case of an imported 
+           wallet, we need to scan the whole chain to find any transactions. 
+           If we opened the wallet however, we just need to scan from when we 
+           last had it open. If we are generating a wallet, there is no need
+           to check for transactions as there is no way the wallet can have
+           received any money yet. */
+        if (action != Generate)
+        {
+            findNewTransactions(node, walletInfo);
+
+        }
+        else
+        {
+            std::cout << InformationMsg("Your wallet is syncing with the "
+                                        "network in the background.")
+                      << std::endl
+                      << InformationMsg("Until this is completed new "
+                                        "transactions might not show up.")
+                      << std::endl
+                      << InformationMsg("Use bc_height to check the progress.")
+                      << std::endl << std::endl;
+        }
+
+        welcomeMsg();
+
+        inputLoop(walletInfo, node);
+
+        shutdown(walletInfo->wallet, node, alreadyShuttingDown);
     }
-
-    welcomeMsg();
-
-    inputLoop(walletInfo, node);
-
-    shutdown(walletInfo->wallet, node, alreadyShuttingDown);
 }
 
 std::shared_ptr<WalletInfo> handleAction(CryptoNote::WalletGreen &wallet,
-                                         Action action, Config &config)
+                                         Action action)
 {
     if (action == Generate)
     {
@@ -203,7 +165,7 @@ std::shared_ptr<WalletInfo> handleAction(CryptoNote::WalletGreen &wallet,
     }
     else if (action == Open)
     {
-        return openWallet(wallet, config);
+        return openWallet(wallet);
     }
     else if (action == Import)
     {
@@ -234,7 +196,7 @@ std::shared_ptr<WalletInfo> createViewWallet(CryptoNote::WalletGreen &wallet)
 
     while (true)
     {
-        std::cout << "Public WTIP address: ";
+        std::cout << "Public TRTL address: ";
 
         std::getline(std::cin, address);
         boost::algorithm::trim(address);
@@ -245,15 +207,15 @@ std::shared_ptr<WalletInfo> createViewWallet(CryptoNote::WalletGreen &wallet)
                       << "It should be 99 characters long, but it is "
                       << address.length() << " characters long!" << std::endl;
         }
-        else if (address.substr(0, 4) != "WTIP")
+        else if (address.substr(0, 4) != "TRTL")
         {
             std::cout << WarningMsg("Invalid address! It should start with "
-                                    "\"WTIP\"!") << std::endl;
+                                    "\"TRTL\"!") << std::endl;
         }
         else if (!CryptoNote::parseAccountAddressString(prefix, publicKeys,
                                                         address))
         {
-            std::cout << WarningMsg("Failed to parse WTIP address! Ensure you "
+            std::cout << WarningMsg("Failed to parse TRTL address! Ensure you "
                                     "have entered it correctly.")
                       << std::endl;
         }
@@ -356,29 +318,13 @@ std::shared_ptr<WalletInfo> generateWallet(CryptoNote::WalletGreen &wallet)
                                         walletAddress, false, wallet);
 }
 
-std::shared_ptr<WalletInfo> openWallet(CryptoNote::WalletGreen &wallet,
-                                       Config &config)
+std::shared_ptr<WalletInfo> openWallet(CryptoNote::WalletGreen &wallet)
 {
-    std::string walletFileName = getExistingWalletFileName(config);
-
-    bool initial = true;
+    std::string walletFileName = getExistingWalletFileName();
 
     while (true)
     {
-        std::string walletPass;
-
-        /* Only use the command line pass once, otherwise we will infinite
-           loop if it is incorrect */
-        if (initial && config.passGiven)
-        {
-            walletPass = config.walletPass;
-        }
-        else
-        {
-            walletPass = getWalletPassword(false);
-        }
-
-        initial = false;
+        std::string walletPass = getWalletPassword(false);
 
         connectingMsg();
 
@@ -501,26 +447,14 @@ Crypto::SecretKey getPrivateKey(std::string msg)
     }
 }
 
-std::string getExistingWalletFileName(Config &config)
+std::string getExistingWalletFileName()
 {
-    bool initial = true;
-
     std::string walletName;
 
     while (true)
     {
-        /* Only use wallet file once in case it is incorrect */
-        if (config.walletGiven && initial)
-        {
-            walletName = config.walletFile;
-        }
-        else
-        {
-            std::cout << "What is the name of the wallet you want to open?: ";
-            std::getline(std::cin, walletName);
-        }
-
-        initial = false;
+        std::cout << "What is the name of the wallet you want to open?: ";
+        std::getline(std::cin, walletName);
 
         std::string walletFileName = walletName + ".wallet";
 
@@ -586,13 +520,8 @@ std::string getWalletPassword(bool verifyPwd)
     return pwdContainer.password();
 }
 
-Action getAction(Config &config)
+Action getAction()
 {
-    if (config.walletGiven || config.passGiven)
-    {
-        return Open;
-    }
-
     while (true)
     {
         std::cout << std::endl << "Welcome, please choose an option below:"
@@ -764,7 +693,7 @@ void inputLoop(std::shared_ptr<WalletInfo> &walletInfo, CryptoNote::INode &node)
         std::string command = getInputAndDoWorkWhileIdle(walletInfo);
 
         /* Split into args to support legacy transfer command, for example
-           transfer 5 WTIPxyz... 100, sends 100 WTIP to WTIPxyz... with a mixin
+           transfer 5 TRTLxyz... 100, sends 100 TRTL to TRTLxyz... with a mixin
            of 5 */
         std::vector<std::string> words;
         words = boost::split(words, command, ::isspace);
@@ -796,12 +725,6 @@ void inputLoop(std::shared_ptr<WalletInfo> &walletInfo, CryptoNote::INode &node)
         else if (command == "exit")
         {
             return;
-        }
-        else if (command == "save")
-        {
-            std::cout << InformationMsg("Saving.") << std::endl;
-            walletInfo->wallet.save();
-            std::cout << InformationMsg("Saved.") << std::endl;
         }
         else if (command == "bc_height")
         {
@@ -870,22 +793,20 @@ void help(bool viewWallet)
               << SuccessMsg("bc_height", 25)
               << "Show the blockchain height" << std::endl
               << SuccessMsg("balance", 25)
-              << "Display how much WTIP you have" << std::endl
+              << "Display how much TRTL you have" << std::endl
               << SuccessMsg("export_keys", 25)
               << "Export your private keys" << std::endl
               << SuccessMsg("address", 25)
               << "Displays your payment address" << std::endl
               << SuccessMsg("exit", 25)
               << "Exit and save your wallet" << std::endl
-              << SuccessMsg("save", 25)
-              << "Save your wallet state" << std::endl
               << SuccessMsg("incoming_transfers", 25)
               << "Show incoming transfers" << std::endl;
                   
     if (viewWallet)
     {
         std::cout << InformationMsg("Please note you are using a view only "
-                                    "wallet, and so cannot transfer WTIP.")
+                                    "wallet, and so cannot transfer TRTL.")
                   << std::endl;
     }
     else
@@ -901,7 +822,7 @@ void help(bool viewWallet)
                   << "Fully optimize your wallet to send large amounts"
                   << std::endl
                   << SuccessMsg("transfer", 25)
-                  << "Send WTIP to someone" << std::endl;
+                  << "Send TRTL to someone" << std::endl;
     }
 }
 
@@ -992,7 +913,7 @@ void blockchainHeight(CryptoNote::INode &node, CryptoNote::WalletGreen &wallet)
     if (localHeight == 0 && remoteHeight == 0)
     {
         std::cout << WarningMsg("Uh oh, it looks like you don't have "
-                                "worktipsd open!")
+                                "Worktipsd open!")
                   << std::endl;
     }
     else if (walletHeight + 1000 < remoteHeight && localHeight == remoteHeight)
@@ -1006,7 +927,7 @@ void blockchainHeight(CryptoNote::INode &node, CryptoNote::WalletGreen &wallet)
     }
     else if (localHeight == remoteHeight)
     {
-        std::cout << SuccessMsg("You are synced with the Worktips network!") << std::endl;
+        std::cout << SuccessMsg("Yay! You are synced!") << std::endl;
     }
     else
     {
@@ -1047,7 +968,7 @@ bool shutdown(CryptoNote::WalletGreen &wallet, CryptoNote::INode &node,
             {
                 std::cout << WarningMsg("Wallet took too long to save! "
                                         "Force closing.") << std::endl
-                          << "Exited." << std::endl;
+                          << "Bye." << std::endl;
                 exit(0);
             }
 
@@ -1064,7 +985,7 @@ bool shutdown(CryptoNote::WalletGreen &wallet, CryptoNote::INode &node,
     /* Wait for shutdown watcher to finish */
     timelyShutdown.join();
 
-    std::cout << "Exited." << std::endl;
+    std::cout << "Bye." << std::endl;
 
     return true;
 }
@@ -1187,7 +1108,7 @@ void findNewTransactions(CryptoNote::INode &node,
 
     if (localHeight != remoteHeight)
     {
-        std::cout << "Your worktipsd isn't fully synced yet!" << std::endl
+        std::cout << "Your Worktipsd isn't fully synced yet!" << std::endl
                   << "Until you are fully synced, you won't be able to send "
                   << "transactions, and your balance may be missing or "
                   << "incorrect!" << std::endl << std::endl;
@@ -1227,76 +1148,75 @@ void findNewTransactions(CryptoNote::INode &node,
         /* This MUST be called on the main thread! */
         walletInfo->wallet.updateInternalCache();
 
-        localHeight = node.getLastLocalBlockHeight();
-        remoteHeight = node.getLastKnownBlockHeight();
-        std::cout << SuccessMsg(std::to_string(walletHeight))
-                  << " of " << InformationMsg(std::to_string(localHeight))
-                  << std::endl;
+        size_t tmpTransactionCount = walletInfo->wallet.getTransactionCount();
 
         uint32_t tmpWalletHeight = walletInfo->wallet.getBlockCount();
 
-        int waitSeconds = 1;
         if (tmpWalletHeight == walletHeight)
         {
             stuckCounter++;
-            waitSeconds = 3;
-
-            if (stuckCounter > 20)
-            {
-                std::string warning =
-                    "Syncing may be stuck. Try restarting worktipsd.\n"
-                    "If this persists, visit "
-                    "https://discord.gg/YGeWXQ2 for support.";
-                std::cout << WarningMsg(warning) << std::endl;
-            }
-            else if (stuckCounter > 19)
-            {
-                /*
-                   Calling save has the side-effect of starting
-                   and stopping blockchainSynchronizer, which seems
-                   to sometimes force the sync to resume properly.
-                   So we'll try this before warning the user.
-                */
-                std::cout << InformationMsg("Saving wallet.") << std::endl;
-                walletInfo->wallet.save();
-                waitSeconds = 5;
-            }
         }
         else
         {
             stuckCounter = 0;
-            walletHeight = tmpWalletHeight;
+        }
 
-            size_t tmpTransactionCount = walletInfo->wallet.getTransactionCount();
-            if (tmpTransactionCount != transactionCount)
+        /* Should be around a minute */
+        if (stuckCounter > 20)
+        {
+            std::cout << WarningMsg("It looks like syncing might have got "
+                                    "stuck...") << std::endl
+                      << WarningMsg("This is probably due to Worktipsd not "
+                                    "responding. Try restarting Worktipsd "
+                                    "and the wallet.") << std::endl
+                      << WarningMsg("If this error still continues after "
+                                    "restarting the software, you may need to "
+                                    "resync the blockchain.") << std::endl
+                      << WarningMsg("Visit https://github.com/vordas/"
+                                    "worktips/"
+                                    " for more info.")
+                      << std::endl;
+
+        }
+
+        walletHeight = tmpWalletHeight;
+
+        localHeight = node.getLastLocalBlockHeight();
+        remoteHeight = node.getLastKnownBlockHeight();
+
+        std::cout << SuccessMsg(std::to_string(walletHeight))
+                  << " of " << InformationMsg(std::to_string(localHeight))
+                  << std::endl;
+
+        if (tmpTransactionCount != transactionCount)
+        {
+            for (size_t i = transactionCount; i < tmpTransactionCount; i++)
             {
-                for (size_t i = transactionCount; i < tmpTransactionCount; i++)
+                CryptoNote::WalletTransaction t 
+                    = walletInfo->wallet.getTransaction(i);
+
+                /* Don't print out fusion transactions */
+                if (t.totalAmount != 0)
                 {
-                    CryptoNote::WalletTransaction t
-                        = walletInfo->wallet.getTransaction(i);
+                    std::cout << std::endl
+                              << InformationMsg("New transaction found!")
+                              << std::endl << std::endl;
 
-                    /* Don't print out fusion transactions */
-                    if (t.totalAmount != 0)
+                    if (t.totalAmount < 0)
                     {
-                        std::cout << std::endl
-                                  << InformationMsg("New transaction found!")
-                                  << std::endl << std::endl;
-
-                        if (t.totalAmount < 0)
-                        {
-                            printOutgoingTransfer(t);
-                        }
-                        else
-                        {
-                            printIncomingTransfer(t);
-                        }
+                        printOutgoingTransfer(t);
+                    }
+                    else
+                    {
+                        printIncomingTransfer(t);
                     }
                 }
-
-                transactionCount = tmpTransactionCount;
             }
+
+            transactionCount = tmpTransactionCount;
         }
-        std::this_thread::sleep_for(std::chrono::seconds(waitSeconds));
+
+        std::this_thread::sleep_for(std::chrono::seconds(3));
     }
 
     std::cout << SuccessMsg("Finished scanning blockchain!") << std::endl
@@ -1327,14 +1247,14 @@ ColouredMsg getPrompt(std::shared_ptr<WalletInfo> &walletInfo)
 
     std::string shortName = walletName.substr(0, promptLength);
 
-    return InformationMsg("[WTIP " + shortName + "]: ");
+    return InformationMsg("[TRTL " + shortName + "]: ");
 }
 
 void connectingMsg()
 {
-    std::cout << std::endl << "Making initial contact with worktipsd."
+    std::cout << std::endl << "Contacting Worktipsd."
               << std::endl
-              << "Please wait, this sometimes can take a long time..."
+              << "Please wait, this may take some time..."
               << std::endl << std::endl;
 }
 
@@ -1343,7 +1263,7 @@ void viewWalletMsg()
     std::cout << InformationMsg("Please remember that when using a view wallet "
                                 "you can only view incoming transactions!")
               << std::endl << "This means if you received 100 WTIP and then "
-              << "sent 50 WTIP, your balance would appear to still be 100 "
+              << "sent WTIP TRTL, your balance would appear to still be 100 "
               << "WTIP." << std::endl
               << "To effectively use a view wallet, you should only deposit "
               << "to this wallet." << std::endl

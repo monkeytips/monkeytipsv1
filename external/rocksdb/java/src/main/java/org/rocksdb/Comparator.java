@@ -1,7 +1,7 @@
 // Copyright (c) 2011-present, Facebook, Inc.  All rights reserved.
-//  This source code is licensed under both the GPLv2 (found in the
-//  COPYING file in the root directory) and Apache 2.0 License
-//  (found in the LICENSE.Apache file in the root directory).
+// This source code is licensed under the BSD-style license found in the
+// LICENSE file in the root directory of this source tree. An additional grant
+// of patent rights can be found in the PATENTS file in the same directory.
 
 package org.rocksdb;
 
@@ -16,18 +16,16 @@ package org.rocksdb;
  */
 public abstract class Comparator extends AbstractComparator<Slice> {
 
+  private final long nativeHandle_;
+
   public Comparator(final ComparatorOptions copt) {
-    super(copt);
+    super();
+    this.nativeHandle_ = createNewComparator0(copt.nativeHandle_);
   }
 
   @Override
-  protected long initializeNative(final long... nativeParameterHandles) {
-    return createNewComparator0(nativeParameterHandles[0]);
-  }
-
-  @Override
-  final ComparatorType getComparatorType() {
-    return ComparatorType.JAVA_COMPARATOR;
+  protected final long getNativeHandle() {
+    return nativeHandle_;
   }
 
   private native long createNewComparator0(final long comparatorOptionsHandle);

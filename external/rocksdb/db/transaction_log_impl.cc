@@ -1,7 +1,7 @@
 //  Copyright (c) 2011-present, Facebook, Inc.  All rights reserved.
-//  This source code is licensed under both the GPLv2 (found in the
-//  COPYING file in the root directory) and Apache 2.0 License
-//  (found in the LICENSE.Apache file in the root directory).
+//  This source code is licensed under the BSD-style license found in the
+//  LICENSE file in the root directory of this source tree. An additional grant
+//  of patent rights can be found in the PATENTS file in the same directory.
 
 #ifndef ROCKSDB_LITE
 #ifndef __STDC_FORMAT_MACROS
@@ -16,11 +16,10 @@
 namespace rocksdb {
 
 TransactionLogIteratorImpl::TransactionLogIteratorImpl(
-    const std::string& dir, const ImmutableDBOptions* options,
+    const std::string& dir, const DBOptions* options,
     const TransactionLogIterator::ReadOptions& read_options,
     const EnvOptions& soptions, const SequenceNumber seq,
-    std::unique_ptr<VectorLogPtr> files, VersionSet const* const versions,
-    const bool seq_per_batch)
+    std::unique_ptr<VectorLogPtr> files, VersionSet const* const versions)
     : dir_(dir),
       options_(options),
       read_options_(read_options),
@@ -32,8 +31,7 @@ TransactionLogIteratorImpl::TransactionLogIteratorImpl(
       currentFileIndex_(0),
       currentBatchSeq_(0),
       currentLastSeq_(0),
-      versions_(versions),
-      seq_per_batch_(seq_per_batch) {
+      versions_(versions) {
   assert(files_ != nullptr);
   assert(versions_ != nullptr);
 
@@ -47,18 +45,17 @@ Status TransactionLogIteratorImpl::OpenLogFile(
   Env* env = options_->env;
   unique_ptr<SequentialFile> file;
   Status s;
-  EnvOptions optimized_env_options = env->OptimizeForLogRead(soptions_);
   if (logFile->Type() == kArchivedLogFile) {
     std::string fname = ArchivedLogFileName(dir_, logFile->LogNumber());
-    s = env->NewSequentialFile(fname, &file, optimized_env_options);
+    s = env->NewSequentialFile(fname, &file, soptions_);
   } else {
     std::string fname = LogFileName(dir_, logFile->LogNumber());
-    s = env->NewSequentialFile(fname, &file, optimized_env_options);
+    s = env->NewSequentialFile(fname, &file, soptions_);
     if (!s.ok()) {
       //  If cannot open file in DB directory.
       //  Try the archive dir, as it could have moved in the meanwhile.
       fname = ArchivedLogFileName(dir_, logFile->LogNumber());
-      s = env->NewSequentialFile(fname, &file, optimized_env_options);
+      s = env->NewSequentialFile(fname, &file, soptions_);
     }
   }
   if (s.ok()) {
@@ -243,57 +240,13 @@ void TransactionLogIteratorImpl::UpdateCurrentWriteBatch(const Slice& record) {
     }
     startingSequenceNumber_ = expectedSeq;
     // currentStatus_ will be set to Ok if reseek succeeds
-    // Note: this is still ok in seq_pre_batch_ && two_write_queuesp_ mode
-    // that allows gaps in the WAL since it will still skip over the gap.
     currentStatus_ = Status::NotFound("Gap in sequence numbers");
-    // In seq_per_batch_ mode, gaps in the seq are possible so the strict mode
-    // should be disabled
-    return SeekToStartSequence(currentFileIndex_, !seq_per_batch_);
+    return SeekToStartSequence(currentFileIndex_, true);
   }
-
-  struct BatchCounter : public WriteBatch::Handler {
-    SequenceNumber sequence_;
-    BatchCounter(SequenceNumber sequence) : sequence_(sequence) {}
-    Status MarkNoop(bool empty_batch) override {
-      if (!empty_batch) {
-        sequence_++;
-      }
-      return Status::OK();
-    }
-    Status MarkEndPrepare(const Slice&) override {
-      sequence_++;
-      return Status::OK();
-    }
-    Status MarkCommit(const Slice&) override {
-      sequence_++;
-      return Status::OK();
-    }
-
-    Status PutCF(uint32_t cf, const Slice& key, const Slice& val) override {
-      return Status::OK();
-    }
-    Status DeleteCF(uint32_t cf, const Slice& key) override {
-      return Status::OK();
-    }
-    Status SingleDeleteCF(uint32_t cf, const Slice& key) override {
-      return Status::OK();
-    }
-    Status MergeCF(uint32_t cf, const Slice& key, const Slice& val) override {
-      return Status::OK();
-    }
-    Status MarkBeginPrepare() override { return Status::OK(); }
-    Status MarkRollback(const Slice&) override { return Status::OK(); }
-  };
 
   currentBatchSeq_ = WriteBatchInternal::Sequence(batch.get());
-  if (seq_per_batch_) {
-    BatchCounter counter(currentBatchSeq_);
-    batch->Iterate(&counter);
-    currentLastSeq_ = counter.sequence_;
-  } else {
-    currentLastSeq_ =
-        currentBatchSeq_ + WriteBatchInternal::Count(batch.get()) - 1;
-  }
+  currentLastSeq_ = currentBatchSeq_ +
+                    WriteBatchInternal::Count(batch.get()) - 1;
   // currentBatchSeq_ can only change here
   assert(currentLastSeq_ <= versions_->LastSequence());
 

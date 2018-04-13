@@ -55,7 +55,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 enum Action {Open, Generate, Import, SeedImport, ViewWallet};
 
-Action getAction(Config &config);
+Action getAction();
 
 void logIncorrectMnemonicWords(std::vector<std::string> words);
 
@@ -74,8 +74,7 @@ void inputLoop(std::shared_ptr<WalletInfo> &walletInfo, CryptoNote::INode &node)
 
 void exportKeys(std::shared_ptr<WalletInfo> &walletInfo);
 
-void run(CryptoNote::WalletGreen &wallet, CryptoNote::INode &node,
-         Config &config);
+void run(CryptoNote::WalletGreen &wallet, CryptoNote::INode &node);
 
 void blockchainHeight(CryptoNote::INode &node, CryptoNote::WalletGreen &wallet);
 
@@ -109,7 +108,7 @@ std::string getInputAndDoWorkWhileIdle(std::shared_ptr<WalletInfo> &walletInfo);
 
 std::string getNewWalletFileName();
 
-std::string getExistingWalletFileName(Config &config);
+std::string getExistingWalletFileName();
 
 std::string getWalletPassword(bool verifyPwd);
 
@@ -117,8 +116,7 @@ std::shared_ptr<WalletInfo> importFromKeys(CryptoNote::WalletGreen &wallet,
                                            Crypto::SecretKey privateSpendKey,
                                            Crypto::SecretKey privateViewKey);
 
-std::shared_ptr<WalletInfo> openWallet(CryptoNote::WalletGreen &wallet,
-                                       Config &config);
+std::shared_ptr<WalletInfo> openWallet(CryptoNote::WalletGreen &wallet);
 
 std::shared_ptr<WalletInfo> importWallet(CryptoNote::WalletGreen &wallet);
 
@@ -130,7 +128,7 @@ std::shared_ptr<WalletInfo> mnemonicImportWallet(CryptoNote::WalletGreen
 std::shared_ptr<WalletInfo> generateWallet(CryptoNote::WalletGreen &wallet);
 
 std::shared_ptr<WalletInfo> handleAction(CryptoNote::WalletGreen &wallet,
-                                         Action action, Config &config);
+                                         Action action);
 
 Crypto::SecretKey getPrivateKey(std::string outputMsg);
 

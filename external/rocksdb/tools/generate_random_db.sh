@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 #
 # A shell script to load some pre generated data file to a DB using ldb tool
 # ./ldb needs to be avaible to be executed.

@@ -1,12 +1,12 @@
 //  Copyright (c) 2011-present, Facebook, Inc.  All rights reserved.
-//  This source code is licensed under both the GPLv2 (found in the
-//  COPYING file in the root directory) and Apache 2.0 License
-//  (found in the LICENSE.Apache file in the root directory).
+//  This source code is licensed under the BSD-style license found in the
+//  LICENSE file in the root directory of this source tree. An additional grant
+//  of patent rights can be found in the PATENTS file in the same directory.
 
 #include <vector>
 #include <string>
 
-#include "table/merging_iterator.h"
+#include "table/merger.h"
 #include "util/testharness.h"
 #include "util/testutil.h"
 
@@ -15,18 +15,12 @@ namespace rocksdb {
 class MergerTest : public testing::Test {
  public:
   MergerTest()
-      : icomp_(BytewiseComparator()),
-        rnd_(3),
-        merging_iterator_(nullptr),
-        single_iterator_(nullptr) {}
+      : rnd_(3), merging_iterator_(nullptr), single_iterator_(nullptr) {}
   ~MergerTest() = default;
   std::vector<std::string> GenerateStrings(size_t len, int string_len) {
     std::vector<std::string> ret;
-
     for (size_t i = 0; i < len; ++i) {
-      InternalKey ik(test::RandomHumanReadableString(&rnd_, string_len), 0,
-                     ValueType::kTypeValue);
-      ret.push_back(ik.Encode().ToString(false));
+      ret.push_back(test::RandomHumanReadableString(&rnd_, string_len));
     }
     return ret;
   }
@@ -43,11 +37,7 @@ class MergerTest : public testing::Test {
     }
   }
 
-  void SeekToRandom() {
-    InternalKey ik(test::RandomHumanReadableString(&rnd_, 5), 0,
-                   ValueType::kTypeValue);
-    Seek(ik.Encode().ToString(false));
-  }
+  void SeekToRandom() { Seek(test::RandomHumanReadableString(&rnd_, 5)); }
 
   void Seek(std::string target) {
     merging_iterator_->Seek(target);
@@ -106,12 +96,11 @@ class MergerTest : public testing::Test {
     }
 
     merging_iterator_.reset(
-        NewMergingIterator(&icomp_, &small_iterators[0],
+        NewMergingIterator(BytewiseComparator(), &small_iterators[0],
                            static_cast<int>(small_iterators.size())));
     single_iterator_.reset(new test::VectorIterator(all_keys_));
   }
 
-  InternalKeyComparator icomp_;
   Random rnd_;
   std::unique_ptr<InternalIterator> merging_iterator_;
   std::unique_ptr<InternalIterator> single_iterator_;

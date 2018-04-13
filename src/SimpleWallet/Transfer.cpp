@@ -198,8 +198,8 @@ void splitTx(CryptoNote::WalletGreen &wallet,
                  (std::ceil(double(txSize) / double(maxSize))));
 
         /* Split the requested fee over each transaction, i.e. if a fee of 200
-           WTIP was requested and we split it into 4 transactions each one will
-           have a fee of 5 WTIP. If the fee per transaction is less than the
+           TRTL was requested and we split it into 4 transactions each one will
+           have a fee of 5 TRTL. If the fee per transaction is less than the
            min fee, use the min fee. */
         uint64_t feePerTx = std::max (p.fee / numTransactions, minFee);
 
@@ -364,18 +364,6 @@ bool optimize(CryptoNote::WalletGreen &wallet, uint64_t threshold)
             CryptoNote::WalletTransaction w
                 = wallet.getTransaction(tmpFusionTxID);
             fusionTransactionHashes.push_back(w.hash);
-
-            if (fusionTransactionHashes.size() == 1)
-            {
-                std::cout << SuccessMsg("Created 1 fusion transaction!")
-                          << std::endl;
-            }
-            else
-            {
-                std::cout << SuccessMsg("Created " 
-                            + std::to_string(fusionTransactionHashes.size())
-                                    + " fusion transactions!") << std::endl;
-            }
         }
     }
 
@@ -847,8 +835,8 @@ void doTransfer(uint16_t mixin, std::string address, uint64_t amount,
             {
                 std::cout << WarningMsg("Couldn't connect to the network to "
                                         "send the transaction!") << std::endl
-                          << "Ensure worktipsd or the remote node you are "
-                          << "using is open and functioning." << std::endl;
+                          << "Ensure Worktipsd or the remote node you are "
+                          << "using is open and functional." << std::endl;
             }
             else if (retried)
             {
@@ -925,7 +913,7 @@ uint64_t getFee()
         std::cout << std::endl 
                   << InformationMsg("What fee do you want to use?")
                   << std::endl
-                  << "Hit enter for the default fee of 0.1 WTIP: ";
+                  << "Hit enter for the default fee of 0.1 TRTL: ";
 
         std::getline(std::cin, stringAmount);
 
@@ -976,7 +964,7 @@ uint64_t getTransferAmount()
         std::string stringAmount;
 
         std::cout << std::endl
-                  << InformationMsg("How much WTIP do you want to send?: ");
+                  << InformationMsg("How much TRTL do you want to send?: ");
 
         std::getline(std::cin, stringAmount);
 
@@ -1021,7 +1009,7 @@ bool parseFee(std::string feeString)
     }
     else if (fee < CryptoNote::parameters::MINIMUM_FEE)
     {
-        std::cout << WarningMsg("Fee must be at least 0.1 WTIP!") << std::endl;
+        std::cout << WarningMsg("Fee must be at least 0.1 TRTL!") << std::endl;
         return false;
     }
 
@@ -1064,11 +1052,11 @@ bool parseAddress(std::string address)
         return false;
     }
     /* Can't see an easy way to go from prefix num -> prefix string, so for
-       now just hard code "WTIP" - it will let testers send stuff at least */
+       now just hard code "TRTL" - it will let testers send stuff at least */
     else if (prefix != expectedPrefix)
     {
         std::cout << WarningMsg("Invalid address! It should start with "
-                                "\"WTIP\"!") << std::endl;
+                                "\"TRTL\"!") << std::endl;
 
         return false;
     }
@@ -1114,7 +1102,7 @@ bool parseAmount(std::string amountString)
     {
         std::cout << WarningMsg("Failed to parse amount! Ensure you entered the "
                                 "value correctly.") << std::endl
-                  << "Please note, the minimum you can send is 0.01 WTIP, "
+                  << "Please note, the minimum you can send is 0.01 TRTL, "
                   << "and you can only use 2 decimal places."
                   << std::endl;
         return false;

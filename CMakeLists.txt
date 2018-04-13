@@ -1,28 +1,20 @@
 cmake_minimum_required(VERSION 2.8.6)
 
 set(VERSION "0.1")
-# Packaged from commit 15602e0e2f69bc88c2414797bf2ec040ec7adce5
-set(COMMIT 15602e0e)
-set(REFS " (HEAD -> master)")
+# Packaged from commit 114aa3bfc87d406106abb92e35825308e4556dac
+set(COMMIT 114aa3b)
+set(REFS " (tag: v0.4.2)")
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CMAKE_CONFIGURATION_TYPES Debug RelWithDebInfo Release CACHE TYPE INTERNAL)
-set(CMAKE_SKIP_INSTALL_RULES OFF)
+set(CMAKE_SKIP_INSTALL_RULES ON)
 set(CMAKE_SKIP_PACKAGE_ALL_DEPENDENCY ON)
 set(CMAKE_SUPPRESS_REGENERATION ON)
-SET(DO_TESTS ON CACHE STRING "Spend time making tests? Defaults to ON")
-
-if(DO_TESTS)
-  message(STATUS "BUILD TESTS: enabled")
-  enable_testing()
-else()
-  message(STATUS "BUILD TESTS: disabled")
-endif()
-
+enable_testing()
 # copy CTestCustom.cmake to build dir to disable long running tests in 'make test'
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CTestCustom.cmake ${CMAKE_CURRENT_BINARY_DIR})
 
-project(Worktips)
+project(Bytecoin)
 
 include_directories(include src external "${CMAKE_CURRENT_BINARY_DIR}/version")
 if(APPLE)
@@ -163,7 +155,4 @@ endif()
 
 add_subdirectory(external)
 add_subdirectory(src)
-
-if(DO_TESTS)
-  add_subdirectory(tests)
-endif()
+add_subdirectory(tests)

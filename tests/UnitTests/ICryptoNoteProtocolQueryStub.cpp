@@ -29,10 +29,6 @@ uint32_t ICryptoNoteProtocolQueryStub::getObservedHeight() const {
   return observedHeight;
 }
 
-uint32_t ICryptoNoteProtocolQueryStub::getBlockchainHeight() const {
-  return blockchainHeight;
-}
-
 size_t ICryptoNoteProtocolQueryStub::getPeerCount() const {
   return peers;
 }

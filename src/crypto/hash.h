@@ -1,4 +1,4 @@
-// Copyright (c) 2018, The Worktips developers
+// Copyright (c) 2018, The Worktips Developers
 // Copyright (c) 2017-2018, The Turtlecoin developers
 // Copyright (c) 2012-2017, The CryptoNote developers, The Bytecoin developers
 //

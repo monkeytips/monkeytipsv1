@@ -1,6 +1,16 @@
 # Edit definitions below to specify paths to include files and libraries of all 3rd party libraries
 
-# TODO: Make this work with find_package and/or get rid of it
+#
+# Edit these lines to set defaults for use of external libraries
+#
+set(USE_GFLAGS_DEFAULT 0)        # GFLAGS is disabled by default, enable with -DGFLAGS=1 cmake command line agrument
+set(USE_SNAPPY_DEFAULT 0)        # SNAPPY is disabled by default, enable with -DSNAPPY=1 cmake command line agrument
+set(USE_LZ4_DEFAULT 0)           # LZ4 is disabled by default, enable with -DLZ4=1 cmake command line agrument
+set(USE_ZLIB_DEFAULT 0)          # ZLIB is disabled by default, enable with -DZLIB=1 cmake command line agrument
+set(USE_XPRESS_DEFAULT 0)        # XPRESS is disabled by default, enable with -DXPRESS=1 cmake command line agrument
+set(USE_JEMALLOC_DEFAULT 0)      # JEMALLOC is disabled by default, enable with -DJEMALLOC=1 cmake command line agrument
+set(USE_JENONINIT_DEFAULT 1)     # Default is enabled do not call je_init/je_uninit as the newer versions do not have it disable with -DJENONINIT=0
+
 #
 # This example assumes all the libraries locate in directories under THIRDPARTY_HOME environment variable
 # Set environment variable THIRDPARTY_HOME to point to your third party libraries home (Unix style dir separators)
@@ -9,7 +19,7 @@
 set (THIRDPARTY_LIBS "")         # Initialization, don't touch
 
 #
-# Defaults
+# Edit these 4 lines to define paths to GFLAGS
 #
 set(GFLAGS_HOME $ENV{THIRDPARTY_HOME}/Gflags.Library)
 set(GFLAGS_INCLUDE ${GFLAGS_HOME}/inc/include)
@@ -17,12 +27,16 @@ set(GFLAGS_LIB_DEBUG ${GFLAGS_HOME}/bin/debug/amd64/gflags.lib)
 set(GFLAGS_LIB_RELEASE ${GFLAGS_HOME}/bin/retail/amd64/gflags.lib)
 
 # ================================================== GFLAGS ==================================================
-# For compatibility
-if (GFLAGS)
-  set(WITH_GFLAGS ON)
+#
+# Don't touch these lines
+#
+if (DEFINED GFLAGS)
+  set(USE_GFLAGS ${GFLAGS})
+else ()
+  set(USE_GFLAGS ${USE_GFLAGS_DEFAULT})
 endif ()
 
-if (WITH_GFLAGS)
+if (${USE_GFLAGS} EQUAL 1)
   message(STATUS "GFLAGS library is enabled")
   
   if(DEFINED ENV{GFLAGS_INCLUDE})
@@ -56,12 +70,16 @@ set(SNAPPY_INCLUDE ${SNAPPY_HOME}/inc/inc)
 set(SNAPPY_LIB_DEBUG ${SNAPPY_HOME}/bin/debug/amd64/snappy.lib)
 set(SNAPPY_LIB_RELEASE ${SNAPPY_HOME}/bin/retail/amd64/snappy.lib)
 
-# For compatibility
-if(SNAPPY)
-  set(WITH_SNAPPY ON)
+#
+# Don't touch these lines
+#
+if (DEFINED SNAPPY)
+  set(USE_SNAPPY ${SNAPPY})
+else ()
+  set(USE_SNAPPY ${USE_SNAPPY_DEFAULT})
 endif ()
 
-if (WITH_SNAPPY)
+if (${USE_SNAPPY} EQUAL 1)
   message(STATUS "SNAPPY library is enabled")
   
   if(DEFINED ENV{SNAPPY_INCLUDE})
@@ -99,10 +117,12 @@ set(LZ4_LIB_RELEASE ${LZ4_HOME}/bin/retail/amd64/lz4.lib)
 # Don't touch these lines
 #
 if (DEFINED LZ4)
-  set(WITH_LZ4 ON)
+  set(USE_LZ4 ${LZ4})
+else ()
+  set(USE_LZ4 ${USE_LZ4_DEFAULT})
 endif ()
 
-if (WITH_LZ4)
+if (${USE_LZ4} EQUAL 1)
   message(STATUS "LZ4 library is enabled")
   
   if(DEFINED ENV{LZ4_INCLUDE})
@@ -139,13 +159,13 @@ set(ZLIB_LIB_RELEASE ${ZLIB_HOME}/bin/retail/amd64/zlib.lib)
 #
 # Don't touch these lines
 #
-
-# For compatibilty
-if (ZLIB)
-  set(WITH_ZLIB ON)
+if (DEFINED ZLIB)
+  set(USE_ZLIB ${ZLIB})
+else ()
+  set(USE_ZLIB ${USE_ZLIB_DEFAULT})
 endif ()
 
-if (WITH_ZLIB)
+if (${USE_ZLIB} EQUAL 1)
   message(STATUS "ZLIB library is enabled")
 
   if(DEFINED ENV{ZLIB_INCLUDE})
@@ -170,12 +190,13 @@ else ()
   message(STATUS "ZLIB library is disabled")
 endif ()
 
-# For compatibilty
-if (XPRESS)
-  set(WITH_XPRESS ON)
+if (DEFINED XPRESS)
+  set(USE_XPRESS ${XPRESS})
+else ()
+  set(USE_XPRESS ${USE_XPRESS_DEFAULT})
 endif ()
 
-if (WITH_XPRESS)
+if (${USE_XPRESS} EQUAL 1)
   message(STATUS "XPRESS is enabled")
 
   add_definitions(-DXPRESS)
@@ -198,15 +219,15 @@ set(JEMALLOC_LIB_RELEASE ${JEMALLOC_HOME}/bin/retail/amd64/jemalloc.lib)
 #
 # Don't touch these lines
 #
+if (DEFINED JEMALLOC)
+  set(USE_JEMALLOC ${JEMALLOC})
+else ()
+  set(USE_JEMALLOC ${USE_JEMALLOC_DEFAULT})
+endif ()
 
-# For compatibilty
-if(JEMALLOC)
-  set(WITH_JEMALLOC ON)
-endif()
-
-if (WITH_JEMALLOC)
+if (${USE_JEMALLOC} EQUAL 1)
   message(STATUS "JEMALLOC library is enabled")
-  set(JEMALLOC_CXX_FLAGS "-DROCKSDB_JEMALLOC -DJEMALLOC_EXPORT= ")
+  set(JEMALLOC_CXX_FLAGS "-DJEMALLOC -DJEMALLOC_EXPORT= ")
   
   if(DEFINED ENV{JEMALLOC_INCLUDE})
     set(JEMALLOC_INCLUDE $ENV{JEMALLOC_INCLUDE})
@@ -227,7 +248,16 @@ if (WITH_JEMALLOC)
   set (THIRDPARTY_LIBS ${THIRDPARTY_LIBS} ${JEMALLOC_LIBS})
   set (ARTIFACT_SUFFIX "_je")
   
-  set(WITH_JEMALLOC ON)
+  set(USE_JENONINIT USE_JENONINIT_DEFAULT)
+ 
+  if(JENONINIT)
+    set(USE_JENONINIT ${JENONINIT})
+  endif()
+  
+  if(${USE_JENONINIT} EQUAL 1)
+    add_definitions(-DJEMALLOC_NON_INIT)
+    message(STATUS "JEMALLOC NONINIT version")
+  endif()
   
 else ()
   set (ARTIFACT_SUFFIX "")
