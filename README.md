@@ -197,5 +197,5 @@ make
 
 _Your executables will be located in `build/src` folder._
 
-#### Credits
+### Credits
 Cryptonote Developers, Bytecoin Developers, Monero Developers, Forknote Project, TurtleCoin Developers
