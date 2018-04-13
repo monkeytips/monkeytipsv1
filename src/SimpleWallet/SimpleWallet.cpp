@@ -1006,7 +1006,7 @@ void blockchainHeight(CryptoNote::INode &node, CryptoNote::WalletGreen &wallet)
     }
     else if (localHeight == remoteHeight)
     {
-        std::cout << SuccessMsg("Yay! You are synced!") << std::endl;
+        std::cout << SuccessMsg("You are synced with the Worktips network!") << std::endl;
     }
     else
     {
@@ -1020,7 +1020,7 @@ bool shutdown(CryptoNote::WalletGreen &wallet, CryptoNote::INode &node,
 {
     if (alreadyShuttingDown)
     {
-        std::cout << "Patience little turtle, we're already shutting down!" 
+        std::cout << "Shutting down!" 
                   << std::endl;
         return false;
     }
@@ -1047,7 +1047,7 @@ bool shutdown(CryptoNote::WalletGreen &wallet, CryptoNote::INode &node,
             {
                 std::cout << WarningMsg("Wallet took too long to save! "
                                         "Force closing.") << std::endl
-                          << "Bye." << std::endl;
+                          << "Exited." << std::endl;
                 exit(0);
             }
 
@@ -1064,7 +1064,7 @@ bool shutdown(CryptoNote::WalletGreen &wallet, CryptoNote::INode &node,
     /* Wait for shutdown watcher to finish */
     timelyShutdown.join();
 
-    std::cout << "Bye." << std::endl;
+    std::cout << "Exited." << std::endl;
 
     return true;
 }

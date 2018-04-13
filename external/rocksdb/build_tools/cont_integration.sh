@@ -82,7 +82,7 @@ git checkout master
 
 error=$?
 if [ ! $error -eq 0 ]; then
-  log_err "This is not good. Can't checkout master. Bye-bye!"
+  log_err "This is not good. Can't checkout master. Exiting!"
   exit 1
 fi
 
