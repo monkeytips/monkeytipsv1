@@ -103,10 +103,6 @@ make
 _Your executables will be located in `build/src` folder._
 
 
-<<<<<<< HEAD
-#### Credits
-Cryptonote Developers, Bytecoin Developers, Monero Developers, Forknote Project, TurtleCoin Developers
-=======
 ### Compile on Linux Ubuntu 14
 
 **1. Install dependencies**
@@ -200,4 +196,6 @@ make
 ``
 
 _Your executables will be located in `build/src` folder._
->>>>>>> 46b0caf39464104611f8bc7a0c2e4b8c5adc9306
+
+#### Credits
+Cryptonote Developers, Bytecoin Developers, Monero Developers, Forknote Project, TurtleCoin Developers
