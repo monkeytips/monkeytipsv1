@@ -196,7 +196,7 @@ std::shared_ptr<WalletInfo> createViewWallet(CryptoNote::WalletGreen &wallet)
 
     while (true)
     {
-        std::cout << "Public TRTL address: ";
+        std::cout << "Public WTIP address: ";
 
         std::getline(std::cin, address);
         boost::algorithm::trim(address);
@@ -207,15 +207,15 @@ std::shared_ptr<WalletInfo> createViewWallet(CryptoNote::WalletGreen &wallet)
                       << "It should be 99 characters long, but it is "
                       << address.length() << " characters long!" << std::endl;
         }
-        else if (address.substr(0, 4) != "TRTL")
+        else if (address.substr(0, 4) != "WTIP")
         {
             std::cout << WarningMsg("Invalid address! It should start with "
-                                    "\"TRTL\"!") << std::endl;
+                                    "\"WTIP\"!") << std::endl;
         }
         else if (!CryptoNote::parseAccountAddressString(prefix, publicKeys,
                                                         address))
         {
-            std::cout << WarningMsg("Failed to parse TRTL address! Ensure you "
+            std::cout << WarningMsg("Failed to parse WTIP address! Ensure you "
                                     "have entered it correctly.")
                       << std::endl;
         }
@@ -693,7 +693,7 @@ void inputLoop(std::shared_ptr<WalletInfo> &walletInfo, CryptoNote::INode &node)
         std::string command = getInputAndDoWorkWhileIdle(walletInfo);
 
         /* Split into args to support legacy transfer command, for example
-           transfer 5 TRTLxyz... 100, sends 100 TRTL to TRTLxyz... with a mixin
+           transfer 5 WTIPxyz... 100, sends 100 WTIP to WTIPxyz... with a mixin
            of 5 */
         std::vector<std::string> words;
         words = boost::split(words, command, ::isspace);
@@ -793,7 +793,7 @@ void help(bool viewWallet)
               << SuccessMsg("bc_height", 25)
               << "Show the blockchain height" << std::endl
               << SuccessMsg("balance", 25)
-              << "Display how much TRTL you have" << std::endl
+              << "Display how much WTIP you have" << std::endl
               << SuccessMsg("export_keys", 25)
               << "Export your private keys" << std::endl
               << SuccessMsg("address", 25)
@@ -806,7 +806,7 @@ void help(bool viewWallet)
     if (viewWallet)
     {
         std::cout << InformationMsg("Please note you are using a view only "
-                                    "wallet, and so cannot transfer TRTL.")
+                                    "wallet, and so cannot transfer WTIP.")
                   << std::endl;
     }
     else
@@ -822,7 +822,7 @@ void help(bool viewWallet)
                   << "Fully optimize your wallet to send large amounts"
                   << std::endl
                   << SuccessMsg("transfer", 25)
-                  << "Send TRTL to someone" << std::endl;
+                  << "Send WTIP to someone" << std::endl;
     }
 }
 
@@ -1247,7 +1247,7 @@ ColouredMsg getPrompt(std::shared_ptr<WalletInfo> &walletInfo)
 
     std::string shortName = walletName.substr(0, promptLength);
 
-    return InformationMsg("[TRTL " + shortName + "]: ");
+    return InformationMsg("[WTIP " + shortName + "]: ");
 }
 
 void connectingMsg()
@@ -1263,7 +1263,7 @@ void viewWalletMsg()
     std::cout << InformationMsg("Please remember that when using a view wallet "
                                 "you can only view incoming transactions!")
               << std::endl << "This means if you received 100 WTIP and then "
-              << "sent WTIP TRTL, your balance would appear to still be 100 "
+              << "sent WTIP, your balance would appear to still be 100 "
               << "WTIP." << std::endl
               << "To effectively use a view wallet, you should only deposit "
               << "to this wallet." << std::endl
