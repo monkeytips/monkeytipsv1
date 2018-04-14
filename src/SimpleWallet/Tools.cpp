@@ -76,7 +76,7 @@ std::string formatDollars(uint64_t amount)
 
         virtual std::string do_grouping() const
         {
-            return "\03";
+            return "\08";
         }
     };
 
