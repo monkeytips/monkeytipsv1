@@ -927,7 +927,7 @@ void blockchainHeight(CryptoNote::INode &node, CryptoNote::WalletGreen &wallet)
     }
     else if (localHeight == remoteHeight)
     {
-        std::cout << SuccessMsg("Yay! You are synced!") << std::endl;
+        std::cout << SuccessMsg("Wallet synchronized") << std::endl;
     }
     else
     {
@@ -968,7 +968,7 @@ bool shutdown(CryptoNote::WalletGreen &wallet, CryptoNote::INode &node,
             {
                 std::cout << WarningMsg("Wallet took too long to save! "
                                         "Force closing.") << std::endl
-                          << "Bye." << std::endl;
+                          << "Wallet closed" << std::endl;
                 exit(0);
             }
 
@@ -985,7 +985,7 @@ bool shutdown(CryptoNote::WalletGreen &wallet, CryptoNote::INode &node,
     /* Wait for shutdown watcher to finish */
     timelyShutdown.join();
 
-    std::cout << "Bye." << std::endl;
+    std::cout << "Wallet closed" << std::endl;
 
     return true;
 }
@@ -1079,7 +1079,7 @@ void checkForNewTransactions(std::shared_ptr<WalletInfo> &walletInfo)
 
 void reset(CryptoNote::INode &node, std::shared_ptr<WalletInfo> &walletInfo)
 {
-    std::cout << InformationMsg("Resetting wallet...") << std::endl;
+    std::cout << InformationMsg("Resetting wallet") << std::endl;
 
     walletInfo->knownTransactionCount = 0;
 
