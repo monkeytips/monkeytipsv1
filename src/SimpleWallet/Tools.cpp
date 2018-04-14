@@ -91,7 +91,7 @@ std::string formatDollars(uint64_t amount)
 std::string formatCents(uint64_t amount)
 {
     std::stringstream stream;
-    stream << std::setfill('0') << std::setw(8) << amount;
+    stream << std::setfill('0') << std::setw(2) << amount;
     return stream.str();
 }
 
