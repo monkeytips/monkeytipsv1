@@ -26,7 +26,7 @@ bool parseAmount(std::string strAmount, uint64_t &amount)
 
     size_t pointIndex = strAmount.find_first_of('.');
     size_t fractionSize;
-    size_t numDecimalPlaces = 2;
+    size_t numDecimalPlaces = 8;
 
     if (std::string::npos != pointIndex)
     {
