@@ -6,7 +6,7 @@ This is the reference code for [Worktips](https://worktips.info) cryptocurrency.
 * Official Discord: [Worktips Discord](https://discord.gg/UmZExyz)
 * Official Facebook: [Worktips Facebook](https://www.facebook.com/worktipscoin)
 * Official Twitter: [Worktips Twitter](https://twitter.com/wtipscoin)
-* Official Telegram: [Worktips Telegram](https://t.me/worktips)
+* Official Telegram: [Worktips Telegram](https://t.me/joinchat/HOvygRE-6UnWOzoh72NVMA)
 * Official Whitepaper: [Worktips Whitepaper](http://worktips.info/whitepaper_worktips.zip)
 
 
