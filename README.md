@@ -13,9 +13,9 @@ This is the reference code for [Worktips](https://worktips.info) cryptocurrency.
 
 ## Worktips Cryptocurrency
 
-Worktips [WTIP] is an ASIC resistant CryptoNight Lite Variant 1 algorithm based cryptocurrency. Fast transactions & privacy make this coin perfect for rewarding your workers, co-workers and colleagues for a job well done.
+Worktips [WTIP] is an ASIC resistant CryptoNightLite V1 algorithm based cryptocurrency. Fast transactions & privacy make this coin perfect for rewarding your workers, co-workers and colleagues for a job well done.
 
-- Algorithm: CryptoNight Lite Variant 1
+- Algorithm: CryptoNightLite V1
 - Max. supply: 184,467,440,735.0
 - CryptoNote name: worktips
 - Decimal points: 8
