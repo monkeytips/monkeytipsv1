@@ -27,6 +27,15 @@
 #
 
 cmake_minimum_required(VERSION 2.6)
+
+foreach(p
+    CMP0071 # 3.10: Let AUTOMOC and AUTOUIC process GENERATED files
+    )
+  if(POLICY ${p})
+    cmake_policy(SET ${p} NEW)
+  endif()
+endforeach()
+
 project(rocksdb)
 
 execute_process(COMMAND powershell -Command "Get-Date -format MM_dd_yyyy" OUTPUT_VARIABLE DATE)
