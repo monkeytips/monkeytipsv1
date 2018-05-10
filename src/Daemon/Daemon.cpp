@@ -236,6 +236,16 @@ command_line::add_arg(desc_cmd_sett, arg_print_genesis_tx);
     // configure logging
     logManager.configure(buildLoggerConfiguration(cfgLogLevel, cfgLogFile));
 
+    logger(INFO, BRIGHT_WHITE) <<
+      "\n                                                                        \n"
+        "##      ##  #######  ########  ##    ## ######## #### ########   ###### \n"
+        "##  ##  ## ##     ## ##     ## ##   ##     ##     ##  ##     ## ##    ##\n"
+        "##  ##  ## ##     ## ##     ## ##  ##      ##     ##  ##     ## ##      \n"
+        "##  ##  ## ##     ## ########  #####       ##     ##  ########   ###### \n"
+        "##  ##  ## ##     ## ##   ##   ##  ##      ##     ##  ##              ##\n"
+        "##  ##  ## ##     ## ##    ##  ##   ##     ##     ##  ##        ##    ##\n"
+        " ###  ###   #######  ##     ## ##    ##    ##    #### ##         ###### \n" << ENDL;
+
     logger(INFO, BRIGHT_GREEN) << "Welcome to " << CryptoNote::CRYPTONOTE_NAME << " v" << PROJECT_VERSION_LONG;
 
     if (command_line_preprocessor(vm, logger)) {
@@ -323,7 +333,7 @@ currencyBuilder.isBlockexplorer(blockexplorer_mode);
 
     cprotocol.set_p2p_endpoint(&p2psrv);
     //DaemonCommandsHandler dch(ccore, p2psrv, logManager);
-	DaemonCommandsHandler dch(ccore, p2psrv, logManager, &rpcServer);
+  DaemonCommandsHandler dch(ccore, p2psrv, logManager, &rpcServer);
     logger(INFO) << "Initializing p2p server...";
     if (!p2psrv.init(netNodeConfig)) {
       logger(ERROR, BRIGHT_RED) << "Failed to initialize p2p server.";
