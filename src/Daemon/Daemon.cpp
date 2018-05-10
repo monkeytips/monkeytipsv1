@@ -236,7 +236,7 @@ command_line::add_arg(desc_cmd_sett, arg_print_genesis_tx);
     // configure logging
     logManager.configure(buildLoggerConfiguration(cfgLogLevel, cfgLogFile));
 
-    logger(INFO, BRIGHT_YELLOW) <<
+    logger(INFO, BRIGHT_WHITE) <<
       "\n                                                                        \n"
         "##      ##  #######  ########  ##    ## ######## #### ########   ###### \n"
         "##  ##  ## ##     ## ##     ## ##   ##     ##     ##  ##     ## ##    ##\n"
