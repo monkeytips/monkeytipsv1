@@ -40,7 +40,7 @@ sudo apt-get update
 - get all dependencies
 
 ``
-sudo apt-get install build-essential python-dev gcc g++ git cmake libboost-all-dev librocksdb-dev
+sudo apt-get install build-essential python-dev gcc g++ git cmake librocksdb-dev libboost-all-dev
 ``
 
 **2. Get the coin**
