@@ -824,9 +824,9 @@ bool parseAddress(std::string address)
         return false;
     }
 
-    else if (expectedPrefix == 0x1db32 && address.substr(0, 4) != "WTIP")
+    else if (expectedPrefix == 0x1db32 && address.substr(0, 4) != "Wtip")
     {
-        std::cout << WarningMsg("Invalid address! It should start with WTIP!")
+        std::cout << WarningMsg("Invalid address! It should start with Wtip!")
                   << std::endl << std::endl;
         return false;
     }
