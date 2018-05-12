@@ -134,6 +134,7 @@ CryptoNoteProtocolHandler::CryptoNoteProtocolHandler(const Currency& currency, S
   m_synchronized(false),
   m_stop(false),
   m_observedHeight(0),
+  m_blockchainHeight(0),
   m_peersCount(0),
   logger(log, "protocol") {
 
@@ -242,10 +243,10 @@ bool CryptoNoteProtocolHandler::process_payload_sync_data(const CORE_SYNC_DATA& 
     int64_t diff = static_cast<int64_t>(hshd.current_height) - static_cast<int64_t>(get_current_blockchain_height());
 
     logger(diff >= 0 ? (is_inital ? Logging::INFO : Logging::DEBUGGING) : Logging::TRACE, Logging::BRIGHT_GREEN) << context <<
-      "Worktips node is syncing with the network. You are "
+      "Your Worktips node is syncing with the network. You are "
       // << get_current_blockchain_height() << " -> " << hshd.current_height
       << std::abs(diff) << " blocks (" << std::abs(diff) / (24 * 60 * 60 / m_currency.difficultyTarget()) << " days) "
-      << (diff >= 0 ? std::string("behind") : std::string("ahead of")) << " the network. " << std::endl << "Worktips is now syncing with the network";
+      << (diff >= 0 ? std::string("behind") : std::string("ahead of")) << " the network. " << std::endl;
 
     logger(Logging::DEBUGGING) << "Remote top block height: " << hshd.current_height << ", id: " << hshd.top_id;
     //let the socket to send response to handshake, but request callback, to let send request data after response
@@ -573,7 +574,7 @@ bool CryptoNoteProtocolHandler::request_missing_objects(CryptoNoteConnectionCont
     requestMissingPoolTransactions(context);
 
     context.m_state = CryptoNoteConnectionContext::state_normal;
-    logger(Logging::INFO, Logging::BRIGHT_GREEN) << context << "Successfully synchronized with Worktips network.";
+    logger(Logging::INFO, Logging::BRIGHT_GREEN) << context << "Successfully synchronized with the network.";
     on_connection_synchronized();
   }
   return true;
@@ -584,12 +585,12 @@ bool CryptoNoteProtocolHandler::on_connection_synchronized() {
   if (m_synchronized.compare_exchange_strong(val_expected, true)) {
     logger(Logging::INFO)
       << ENDL ;
-      logger(INFO, BRIGHT_MAGENTA) << "===[ Info ]=============================" << ENDL ;
+      logger(INFO, WHITE) << "===[ info ]=============================" << ENDL ;
       logger(INFO, WHITE) << " Always exit Worktipsd and Simplewallet with the \"exit\" command to preserve your chain and wallet data." << ENDL ;
       logger(INFO, WHITE) << " Use the \"help\" command to see a list of available commands." << ENDL ;
       logger(INFO, WHITE) << " Use the \"export_keys\" command in Simplewallet to display your keys for restoring a corrupted wallet." << ENDL ;
       logger(INFO, WHITE) << " If you need more assistance, visit the #HELP channel in the Worktips Discord Chat - https://discord.gg/YGeWXQ2" << ENDL ;
-      logger(INFO, BRIGHT_MAGENTA) << "===================================================" << ENDL << ENDL ;
+      logger(INFO, WHITE) << "===================================================" << ENDL << ENDL ;
 
     m_observerManager.notify(&ICryptoNoteProtocolObserver::blockchainSynchronized, m_core.getTopBlockIndex());
   }
@@ -708,7 +709,16 @@ void CryptoNoteProtocolHandler::updateObservedHeight(uint32_t peerHeight, const 
       }
     }
   }
+  
+  {
+    std::lock_guard<std::mutex> lock(m_blockchainHeightMutex);
+    if (peerHeight > m_blockchainHeight) {
+      m_blockchainHeight = peerHeight;
+      logger(Logging::INFO, Logging::BRIGHT_GREEN) << "New Top Block Detected: " << peerHeight; 
+    }
+  }
 
+  
   if (updated) {
     logger(TRACE) << "Observed height updated: " << m_observedHeight;
     m_observerManager.notify(&ICryptoNoteProtocolObserver::lastKnownBlockHeightUpdated, m_observedHeight);
@@ -733,6 +743,11 @@ void CryptoNoteProtocolHandler::recalculateMaxObservedHeight(const CryptoNoteCon
 uint32_t CryptoNoteProtocolHandler::getObservedHeight() const {
   std::lock_guard<std::mutex> lock(m_observedHeightMutex);
   return m_observedHeight;
+};
+
+uint32_t CryptoNoteProtocolHandler::getBlockchainHeight() const {
+  std::lock_guard<std::mutex> lock(m_blockchainHeightMutex);
+  return m_blockchainHeight;  
 };
 
 bool CryptoNoteProtocolHandler::addObserver(ICryptoNoteProtocolObserver* observer) {

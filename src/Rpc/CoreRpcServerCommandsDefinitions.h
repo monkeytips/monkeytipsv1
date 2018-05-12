@@ -50,10 +50,12 @@ struct COMMAND_RPC_GET_HEIGHT {
 
   struct response {
     uint64_t height;
+    uint32_t network_height;
     std::string status;
 
     void serialize(ISerializer &s) {
       KV_MEMBER(height)
+      KV_MEMBER(network_height)
       KV_MEMBER(status)
     }
   };
@@ -275,6 +277,10 @@ struct COMMAND_RPC_GET_INFO {
     uint64_t white_peerlist_size;
     uint64_t grey_peerlist_size;
     uint32_t last_known_block_index;
+    uint32_t network_height;
+    uint32_t hashrate;
+    std::string version;
+    bool synced;
 
     void serialize(ISerializer &s) {
       KV_MEMBER(status)
@@ -288,6 +294,10 @@ struct COMMAND_RPC_GET_INFO {
       KV_MEMBER(white_peerlist_size)
       KV_MEMBER(grey_peerlist_size)
       KV_MEMBER(last_known_block_index)
+      KV_MEMBER(network_height)
+      KV_MEMBER(hashrate)
+      KV_MEMBER(synced)
+      KV_MEMBER(version)
     }
   };
 };
@@ -707,6 +717,26 @@ struct COMMAND_RPC_QUERY_BLOCKS_LITE {
   };
 };
 
+struct COMMAND_RPC_GET_BLOCKS_DETAILS_BY_HEIGHTS {
+  struct request {
+    std::vector<uint32_t> blockHeights;
+
+    void serialize(ISerializer& s) {
+      serializeAsBinary(blockHeights, "blockHeights", s);
+    }
+  };
+
+  struct response {
+    std::vector<BlockDetails> blocks;
+    std::string status;
+
+    void serialize(ISerializer& s) {
+      KV_MEMBER(status)
+      KV_MEMBER(blocks)
+    }
+  };
+};
+
 struct COMMAND_RPC_GET_BLOCKS_DETAILS_BY_HASHES {
   struct request {
     std::vector<Crypto::Hash> blockHashes;
@@ -723,6 +753,26 @@ struct COMMAND_RPC_GET_BLOCKS_DETAILS_BY_HASHES {
     void serialize(ISerializer& s) {
       KV_MEMBER(status)
       KV_MEMBER(blocks)
+    }
+  };
+};
+
+struct COMMAND_RPC_GET_BLOCK_DETAILS_BY_HEIGHT {
+  struct request {
+    uint32_t blockHeight;
+
+    void serialize(ISerializer& s) {
+      KV_MEMBER(blockHeight)
+    }
+  };
+
+  struct response {
+    BlockDetails block;
+    std::string status;
+
+    void serialize(ISerializer& s) {
+      KV_MEMBER(status)
+      KV_MEMBER(block)
     }
   };
 };

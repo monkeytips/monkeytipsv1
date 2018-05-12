@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2017, The CryptoNote developers, The Bytecoin developers
+// Copyright (c) 2012-2017, The CryptoNote developers, The Bytecoin developers, The TurtleCoin developers, The Worktips developers
 //
 // This file is part of Bytecoin.
 //
@@ -130,6 +130,7 @@ TransactionValidatorState extractSpentOutputs(const CachedTransaction& transacti
     if (input.type() == typeid(KeyInput)) {
       const KeyInput& in = boost::get<KeyInput>(input);
       bool r = spentOutputs.spentKeyImages.insert(in.keyImage).second;
+      if (r) {}
       assert(r);
     } else {
       assert(false);
@@ -541,10 +542,15 @@ std::vector<Crypto::Hash> Core::findBlockchainSupplement(const std::vector<Crypt
 
 std::error_code Core::addBlock(const CachedBlock& cachedBlock, RawBlock&& rawBlock) {
   throwIfNotInitialized();
-  logger(Logging::DEBUGGING) << "Request to add block came for block " << cachedBlock.getBlockHash();
+  uint32_t blockIndex = cachedBlock.getBlockIndex();
+  Crypto::Hash blockHash = cachedBlock.getBlockHash();
+  std::ostringstream os;
+  os << blockIndex << " (" << blockHash << ")";
+  std::string blockStr = os.str();
 
+  logger(Logging::DEBUGGING) << "Request to add block " << blockStr;
   if (hasBlock(cachedBlock.getBlockHash())) {
-    logger(Logging::DEBUGGING) << "Block " << cachedBlock.getBlockHash() << " already exists";
+    logger(Logging::DEBUGGING) << "Block " << blockStr << " already exists";
     return error::AddBlockErrorCode::ALREADY_EXISTS;
   }
 
@@ -555,14 +561,14 @@ std::error_code Core::addBlock(const CachedBlock& cachedBlock, RawBlock&& rawBlo
 
   auto cache = findSegmentContainingBlock(previousBlockHash);
   if (cache == nullptr) {
-    logger(Logging::WARNING) << "Block " << cachedBlock.getBlockHash() << " rejected as orphaned";
+    logger(Logging::DEBUGGING) << "Block " << blockStr << " rejected as orphaned";
     return error::AddBlockErrorCode::REJECTED_AS_ORPHANED;
   }
 
   std::vector<CachedTransaction> transactions;
   uint64_t cumulativeSize = 0;
   if (!extractTransactions(rawBlock.transactions, transactions, cumulativeSize)) {
-    logger(Logging::WARNING) << "Couldn't deserialize raw block transactions in block " << cachedBlock.getBlockHash();
+    logger(Logging::DEBUGGING) << "Couldn't deserialize raw block transactions in block " << blockStr;
     return error::AddBlockErrorCode::DESERIALIZATION_FAILED;
   }
 
@@ -576,24 +582,45 @@ std::error_code Core::addBlock(const CachedBlock& cachedBlock, RawBlock&& rawBlo
   bool addOnTop = cache->getTopBlockIndex() == previousBlockIndex;
   auto maxBlockCumulativeSize = currency.maxBlockCumulativeSize(previousBlockIndex + 1);
   if (cumulativeBlockSize > maxBlockCumulativeSize) {
-    logger(Logging::WARNING) << "Block " << cachedBlock.getBlockHash() << " has too big cumulative size";
+    logger(Logging::DEBUGGING) << "Block " << blockStr << " has too big cumulative size";
     return error::BlockValidationError::CUMULATIVE_BLOCK_SIZE_TOO_BIG;
   }
 
   uint64_t minerReward = 0;
   auto blockValidationResult = validateBlock(cachedBlock, cache, minerReward);
   if (blockValidationResult) {
-    logger(Logging::WARNING) << "Failed to validate block " << cachedBlock.getBlockHash() << ": " << blockValidationResult.message();
+    logger(Logging::DEBUGGING) << "Failed to validate block " << blockStr << ": " << blockValidationResult.message();
     return blockValidationResult;
   }
 
   auto currentDifficulty = cache->getDifficultyForNextBlock(previousBlockIndex);
   if (currentDifficulty == 0) {
-    logger(Logging::DEBUGGING) << "Block " << cachedBlock.getBlockHash() << " has difficulty overhead";
+    logger(Logging::DEBUGGING) << "Block " << blockStr << " has difficulty overhead";
     return error::BlockValidationError::DIFFICULTY_OVERHEAD;
   }
 
   uint64_t cumulativeFee = 0;
+
+  /* We now limit the mixin allowed in a transaction. However, there have been
+     some transactions outside these limits in the past, so we need to only
+     enforce this on new blocks, otherwise wouldn't be able to sync the chain */
+
+  /* We also need to ensure that the mixin enforced is for the limit that
+     was correct when the block was formed - i.e. if 0 mixin was allowed at
+     block 100, but is no longer allowed - we should still validate block 100 */
+
+  /* In the future, change this to && <= MIXIN_LIMITS_V2_HEIGHT, then add a
+     new section with the new mixin limits */
+  if (blockIndex >= CryptoNote::parameters::MIXIN_LIMITS_V1_HEIGHT) {
+      for (const auto& transaction : transactions) {
+          if (!validateMixin(transaction,
+                             CryptoNote::parameters::MINIMUM_MIXIN_V1,
+                             CryptoNote::parameters::MAXIMUM_MIXIN_V1)) {
+              return error::TransactionValidationError::INVALID_MIXIN;
+          }
+      }
+  }
+
   for (const auto& transaction : transactions) {
     uint64_t fee = 0;
     auto transactionValidationResult = validateTransaction(transaction, validatorState, cache, fee, previousBlockIndex);
@@ -613,23 +640,23 @@ std::error_code Core::addBlock(const CachedBlock& cachedBlock, RawBlock&& rawBlo
 
   if (!currency.getBlockReward(cachedBlock.getBlock().majorVersion, blocksSizeMedian,
                                cumulativeBlockSize, alreadyGeneratedCoins, cumulativeFee, reward, emissionChange)) {
-    logger(Logging::WARNING) << "Block " << cachedBlock.getBlockHash() << " has too big cumulative size";
+    logger(Logging::DEBUGGING) << "Block " << blockStr << " has too big cumulative size";
     return error::BlockValidationError::CUMULATIVE_BLOCK_SIZE_TOO_BIG;
   }
 
   if (minerReward != reward) {
-    logger(Logging::WARNING) << "Block reward mismatch for block " << cachedBlock.getBlockHash()
+    logger(Logging::DEBUGGING) << "Block reward mismatch for block " << blockStr
                              << ". Expected reward: " << reward << ", got reward: " << minerReward;
     return error::BlockValidationError::BLOCK_REWARD_MISMATCH;
   }
 
   if (checkpoints.isInCheckpointZone(cachedBlock.getBlockIndex())) {
     if (!checkpoints.checkBlock(cachedBlock.getBlockIndex(), cachedBlock.getBlockHash())) {
-      logger(Logging::WARNING) << "Checkpoint block hash mismatch for block " << cachedBlock.getBlockHash();
+      logger(Logging::WARNING) << "Checkpoint block hash mismatch for block " << blockStr;
       return error::BlockValidationError::CHECKPOINT_BLOCK_HASH_MISMATCH;
     }
   } else if (!currency.checkProofOfWork(cryptoContext, cachedBlock, currentDifficulty)) {
-    logger(Logging::WARNING) << "Proof of work too weak for block " << cachedBlock.getBlockHash();
+    logger(Logging::WARNING) << "Proof of work too weak for block " << blockStr;
     return error::BlockValidationError::PROOF_OF_WORK_TOO_WEAK;
   }
 
@@ -650,15 +677,15 @@ std::error_code Core::addBlock(const CachedBlock& cachedBlock, RawBlock&& rawBlo
         actualizePoolTransactionsLite(validatorState);
 
         ret = error::AddBlockErrorCode::ADDED_TO_MAIN;
-        logger(Logging::DEBUGGING) << "Block " << cachedBlock.getBlockHash() << " added to main chain. Index: " << (previousBlockIndex + 1);
+        logger(Logging::DEBUGGING) << "Block " << blockStr << " added to main chain.";
         if ((previousBlockIndex + 1) % 100 == 0) {
-          logger(Logging::INFO) << "Block " << cachedBlock.getBlockHash() << " added to main chain. Index: " << (previousBlockIndex + 1);
+          logger(Logging::INFO) << "Block " << blockStr << " added to main chain";
         }
 
         notifyObservers(makeDelTransactionMessage(std::move(hashes), Messages::DeleteTransaction::Reason::InBlock));
       } else {
         cache->pushBlock(cachedBlock, transactions, validatorState, cumulativeBlockSize, emissionChange, currentDifficulty, std::move(rawBlock));
-        logger(Logging::WARNING) << "Block " << cachedBlock.getBlockHash() << " added to alternative chain. Index: " << (previousBlockIndex + 1);
+        logger(Logging::DEBUGGING) << "Block " << blockStr << " added to alternative chain.";
 
         auto mainChainCache = chainsLeaves[0];
         if (cache->getCurrentCumulativeDifficulty() > mainChainCache->getCurrentCumulativeDifficulty()) {
@@ -677,8 +704,9 @@ std::error_code Core::addBlock(const CachedBlock& cachedBlock, RawBlock&& rawBlo
 
           ret = error::AddBlockErrorCode::ADDED_TO_ALTERNATIVE_AND_SWITCHED;
 
-          logger(Logging::INFO) << "Switching to alternative chain! New top block hash: " << cachedBlock.getBlockHash() << ", index: " << (previousBlockIndex + 1)
-                                << ", previous top block hash: " << chainsLeaves[endpointIndex]->getTopBlockHash() << ", index: " << chainsLeaves[endpointIndex]->getTopBlockIndex();
+          logger(Logging::INFO) << "Resolved: " << blockStr
+                                << ", Previous: " << chainsLeaves[endpointIndex]->getTopBlockIndex() << " (" 
+                                << chainsLeaves[endpointIndex]->getTopBlockHash() << ")";
         }
       }
     } else {
@@ -690,7 +718,7 @@ std::error_code Core::addBlock(const CachedBlock& cachedBlock, RawBlock&& rawBlo
       chainsStorage.emplace_back(std::move(newCache));
       chainsLeaves.push_back(newlyForkedChainPtr);
 
-      logger(Logging::DEBUGGING) << "Adding alternative block: " << cachedBlock.getBlockHash();
+      logger(Logging::DEBUGGING) << "Resolving: " << blockStr;
 
       newlyForkedChainPtr->pushBlock(cachedBlock, transactions, validatorState, cumulativeBlockSize, emissionChange,
                                      currentDifficulty, std::move(rawBlock));
@@ -699,7 +727,7 @@ std::error_code Core::addBlock(const CachedBlock& cachedBlock, RawBlock&& rawBlo
       updateBlockMedianSize();
     }
   } else {
-    logger(Logging::DEBUGGING) << "Adding alternative block: " << cachedBlock.getBlockHash();
+    logger(Logging::DEBUGGING) << "Resolving: " << blockStr;
 
     auto upperSegment = cache->split(previousBlockIndex + 1);
     //[cache] is lower segment now
@@ -731,7 +759,7 @@ std::error_code Core::addBlock(const CachedBlock& cachedBlock, RawBlock&& rawBlo
     updateMainChainSet();
   }
 
-  logger(Logging::DEBUGGING) << "Block: " << cachedBlock.getBlockHash() << " successfully added";
+  logger(Logging::DEBUGGING) << "Block: " << blockStr << " successfully added";
   notifyOnSuccess(ret, previousBlockIndex, cachedBlock, *cache);
 
   return ret;
@@ -933,6 +961,7 @@ bool Core::addTransactionToPool(CachedTransaction&& cachedTransaction) {
   }
 
   auto transactionHash = cachedTransaction.getTransactionHash();
+
   if (!transactionPool->pushTransaction(std::move(cachedTransaction), std::move(validatorState))) {
     logger(Logging::DEBUGGING) << "Failed to push transaction " << transactionHash << " to pool, already exists";
     return false;
@@ -942,11 +971,61 @@ bool Core::addTransactionToPool(CachedTransaction&& cachedTransaction) {
   return true;
 }
 
+bool Core::validateMixin(const CachedTransaction& cachedTransaction,
+                         uint16_t minMixin, uint16_t maxMixin) {
+
+  /* Note that the mixin calculated here is one more than the mixin you input
+     in your transaction. This is checking the number of outputs, for example,
+     5, where yours is one of them. Mixin 4 = mix my output with 4 others,
+     so 5 outputs. So, we add one here. */
+  minMixin++;
+  maxMixin++;
+
+  uint64_t mixin = 0;
+
+  auto tx = createTransaction(cachedTransaction.getTransaction());
+
+  for (size_t i = 0; i < tx->getInputCount(); ++i) {
+    if (tx->getInputType(i) != TransactionTypes::InputType::Key) {
+      continue;
+    }
+
+    KeyInput input;
+    tx->getInput(i, input);
+    uint64_t currentMixin = input.outputIndexes.size();
+    if (currentMixin > mixin) {
+        mixin = currentMixin;
+    }
+  }
+
+  if (mixin > maxMixin) {
+    logger(Logging::DEBUGGING) << "Transaction " << cachedTransaction.getTransactionHash()
+      << " is not valid. Reason: transaction mixin is too large (" << mixin
+      << "). Maximum mixin allowed is " << maxMixin;
+
+    return false;
+  } else if (mixin < minMixin) {
+    logger(Logging::DEBUGGING) << "Transaction " << cachedTransaction.getTransactionHash()
+      << " is not valid. Reason: transaction mixin is too small (" << mixin
+      << "). Minimum mixin allowed is " << minMixin;
+
+    return false;
+  }
+
+  return true;
+}
+
 bool Core::isTransactionValidForPool(const CachedTransaction& cachedTransaction, TransactionValidatorState& validatorState) {
+  if (!validateMixin(cachedTransaction,
+                     CryptoNote::parameters::MINIMUM_MIXIN_V1,
+                     CryptoNote::parameters::MAXIMUM_MIXIN_V1)) {
+    return false;
+  }
+  
   uint64_t fee;
 
   if (auto validationResult = validateTransaction(cachedTransaction, validatorState, chainsLeaves[0], fee, getTopBlockIndex())) {
-    logger(Logging::WARNING) << "Transaction " << cachedTransaction.getTransactionHash()
+    logger(Logging::DEBUGGING) << "Transaction " << cachedTransaction.getTransactionHash()
       << " is not valid. Reason: " << validationResult.message();
     return false;
   }
@@ -1302,6 +1381,7 @@ std::error_code Core::validateSemantic(const Transaction& transaction, uint64_t&
 
     // parameters used for the additional key_image check
     static const Crypto::KeyImage Z = { {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 } };
+    if (Z == Z) {}
     static const Crypto::KeyImage I = { {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 } };
     static const Crypto::KeyImage L = { {0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58, 0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10 } };
 
@@ -1583,6 +1663,20 @@ IBlockchainCache* Core::findSegmentContainingBlock(const Crypto::Hash& blockHash
   return findAlternativeSegmentContainingBlock(blockHash);
 }
 
+IBlockchainCache* Core::findSegmentContainingBlock(uint32_t blockHeight) const {
+  assert(chainsLeaves.size() > 0);
+
+  // first search in main chain
+  auto blockSegment = findMainChainSegmentContainingBlock(blockHeight);
+  if (blockSegment != nullptr) {
+    return blockSegment;
+  }
+
+  // than search in alternative chains
+  return findAlternativeSegmentContainingBlock(blockHeight);
+}
+
+
 IBlockchainCache* Core::findAlternativeSegmentContainingBlock(const Crypto::Hash& blockHash) const {
   IBlockchainCache* cache = nullptr;
   std::find_if(++chainsLeaves.begin(), chainsLeaves.end(),
@@ -1842,6 +1936,7 @@ void Core::deleteLeaf(size_t leafIndex) {
   IBlockchainCache* parent = leaf->getParent();
   if (parent != nullptr) {
     bool r = parent->deleteChild(leaf);
+    if (r) {}
     assert(r);
   }
 
@@ -1924,6 +2019,17 @@ void Core::mergeSegments(IBlockchainCache* acceptingSegment, IBlockchainCache* s
   }
 }
 
+BlockDetails Core::getBlockDetails(const uint32_t blockHeight) const {
+  throwIfNotInitialized();
+
+  IBlockchainCache* segment = findSegmentContainingBlock(blockHeight);
+  if (segment == nullptr) {
+    throw std::runtime_error("Requested block height wasn't found in blockchain.");
+  }
+
+  return getBlockDetails(segment->getBlockHash(blockHeight));
+}
+
 BlockDetails Core::getBlockDetails(const Crypto::Hash& blockHash) const {
   throwIfNotInitialized();
 
@@ -1974,6 +2080,7 @@ BlockDetails Core::getBlockDetails(const Crypto::Hash& blockHash) const {
 
   int64_t emissionChange = 0;
   bool result = currency.getBlockReward(blockDetails.majorVersion, blockDetails.sizeMedian, 0, prevBlockGeneratedCoins, 0, blockDetails.baseReward, emissionChange);
+  if (result) {}
   assert(result);
 
   uint64_t currentReward = 0;
@@ -2105,6 +2212,7 @@ TransactionDetails Core::getTransactionDetails(const Crypto::Hash& transactionHa
       outputReferences.reserve(txInToKeyDetails.input.outputIndexes.size());
       std::vector<uint32_t> globalIndexes = relativeOutputOffsetsToAbsolute(txInToKeyDetails.input.outputIndexes);
       ExtractOutputKeysResult result = segment->extractKeyOtputReferences(txInToKeyDetails.input.amount, { globalIndexes.data(), globalIndexes.size() }, outputReferences);
+      if (result == result) {}
       assert(result == ExtractOutputKeysResult::SUCCESS);
       assert(txInToKeyDetails.input.outputIndexes.size() == outputReferences.size());
 

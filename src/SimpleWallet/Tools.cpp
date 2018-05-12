@@ -41,31 +41,6 @@ std::string formatAmount(uint64_t amount)
 
 std::string formatDollars(uint64_t amount)
 {
-    /* We want to format our number with comma separators so it's easier to
-       use. Now, we could use the nice print_money() function to do this.
-       However, whilst this initially looks pretty handy, if we have a locale
-       such as ja_JP.utf8, 1 WTIP will actually be formatted as 100 WTIP, which
-       is terrible, and could really screw over users.
-
-       So, easy solution right? Just use en_US.utf8! Sure, it's not very
-       international, but it'll work! Unfortunately, no. The user has to have
-       the locale installed, and if they don't, we get a nasty error at
-       runtime.
-
-       Annoyingly, there's no easy way to comma separate numbers outside of
-       using the locale method, without writing a pretty long boiler plate
-       function. So, instead, we define our own locale, which just returns
-       the values we want.
-       
-       It's less internationally friendly than we would potentially like
-       but that would require a ton of scrutinization which if not done could
-       land us with quite a few issues and rightfully angry users.
-       Furthermore, we'd still have to hack around cases like JP locale
-       formatting things incorrectly, and it makes reading in inputs harder
-       too. */
-
-    /* Thanks to https://stackoverflow.com/a/7277333/8737306 for this neat
-       workaround */
     class comma_numpunct : public std::numpunct<char>
     {
       protected:
@@ -81,14 +56,13 @@ std::string formatDollars(uint64_t amount)
     };
 
     std::locale comma_locale(std::locale(), new comma_numpunct());
-
     std::stringstream stream;
     stream.imbue(comma_locale);
     stream << amount;
     return stream.str();
 }
 
-/* Pad to 8 spaces, e.g. .8 becomes .00000008 */
+
 std::string formatCents(uint64_t amount)
 {
     std::stringstream stream;
@@ -124,7 +98,32 @@ bool confirm(std::string msg)
         else
         {
             std::cout << WarningMsg("Bad input: ") << InformationMsg(answer)
-                      << WarningMsg(" - please enter either Y or N.") << std::endl;
+                      << WarningMsg(" - please enter either Y or N.")
+                      << std::endl;
         }
     }
+}
+
+std::string getPaymentID(std::string extra)
+{
+    std::string paymentID;
+
+    if (extra.length() > 0)
+    {
+        std::vector<uint8_t> vecExtra;
+
+        for (auto it : extra)
+        {
+            vecExtra.push_back(static_cast<uint8_t>(it));
+        }
+
+        Crypto::Hash paymentIdHash;
+
+        if (CryptoNote::getPaymentIdFromTxExtra(vecExtra, paymentIdHash))
+        {
+            return Common::podToHex(paymentIdHash);
+        }
+    }
+
+    return paymentID;
 }

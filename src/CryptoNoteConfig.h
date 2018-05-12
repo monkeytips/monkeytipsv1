@@ -28,14 +28,12 @@ namespace parameters {
 const uint32_t CRYPTONOTE_MAX_BLOCK_NUMBER                   = 500000000;
 const size_t   CRYPTONOTE_MAX_BLOCK_BLOB_SIZE                = 500000000;
 const size_t   CRYPTONOTE_MAX_TX_SIZE                        = 1000000000;
-const size_t   CRYPTONOTE_MAX_SAFE_TX_SIZE                   = 115000;
 const uint64_t CRYPTONOTE_PUBLIC_ADDRESS_BASE58_PREFIX       = 0x1db32;
 const uint32_t CRYPTONOTE_MINED_MONEY_UNLOCK_WINDOW          = 10;
 const uint64_t CRYPTONOTE_BLOCK_FUTURE_TIME_LIMIT            = 60 * 60 * 2;
 
 const size_t   BLOCKCHAIN_TIMESTAMP_CHECK_WINDOW             = 60;
 
-// MONEY_SUPPLY - total number coins to be generated
 const uint64_t MONEY_SUPPLY                                  = UINT64_C(18446744073709551615);
 const uint32_t ZAWY_DIFFICULTY_BLOCK_INDEX                   = 10500;
 const size_t ZAWY_DIFFICULTY_V2                              = 0;
@@ -53,7 +51,10 @@ const size_t   CRYPTONOTE_COINBASE_BLOB_RESERVED_SIZE        = 600;
 const size_t   CRYPTONOTE_DISPLAY_DECIMAL_POINT              = 8;
 const uint64_t MINIMUM_FEE                                   = UINT64_C(100000);
 const uint16_t DEFAULT_MIXIN                                 = 5;
-const uint16_t MINIMUM_MIXIN                                 = 1;
+const uint16_t MINIMUM_MIXIN_NO_DUST                         = 3;
+const uint16_t MINIMUM_MIXIN_V1                              = 0;
+const uint16_t MAXIMUM_MIXIN_V1                              = 30;
+const uint32_t MIXIN_LIMITS_V1_HEIGHT                        = 44500;
 const uint64_t DEFAULT_DUST_THRESHOLD                        = UINT64_C(100000);
 
 const uint64_t DIFFICULTY_TARGET                             = 120; // seconds
@@ -135,35 +136,6 @@ const uint64_t P2P_DEFAULT_INVOKE_TIMEOUT                    = 60 * 2 * 1000; //
 const size_t   P2P_DEFAULT_HANDSHAKE_INVOKE_TIMEOUT          = 5000;          // 5 seconds
 const char     P2P_STAT_TRUSTED_PUB_KEY[]                    = "8f80f9a5a434a9f1510d13336228debfee9c918ce505efe225d8c94d045fa115";
 
-const uint32_t  P2P_FAILED_ADDR_FORGET_SECONDS               = (60*60);     
-const uint32_t  P2P_IP_BLOCKTIME                             = (60*60*24);  
-const uint32_t  P2P_IP_FAILS_BEFORE_BLOCK                    = 10;
-const uint32_t  P2P_IDLE_CONNECTION_KILL_INTERVAL            = (5*60);
-
 const char* const SEED_NODES[] = { "45.32.237.184:17239", "45.63.91.13:17239" };
-
-struct CheckpointData {
-  uint32_t index;
-  const char* blockId;
-};
-
-const std::initializer_list<CheckpointData> CHECKPOINTS = { 
- { 1000, "7dfeccfd5af2b48dcceff05516ffc150b4179d7d5d0a8edd7f8dbb3276bd5fba" },
- { 1755, "548a574df54b9c0303635c2191ddd912131721597792d028578f9ef55a8e682e" },
- { 2966, "bac75a7fbe416ed33cb206f058a657ff767844207ae2ba0b6feecf062261f640" },
- { 3911, "793fc5af99ea4ea41c2b69037543c534c95d7365eda79abb09bf6351412c757f" },
- { 4307, "8e846b9765b9075be9e4d8d7162186c5e8fee77658f7aab35f075d53ec86b455" },
- { 5730, "2063405a8e4a17e8bed3e08cefd225337076bc444b6155d8f77abbb5114e8e2c" },
- { 6550, "faf02b92d0d87676f19cd1333552f0924e974ff99d5153ebac662433bab2e1bb" },
- { 7800, "5548824a26bad00205a50245338d4e3fa3e40e34968d291b3e99d1bb6cd5bfa4" },
- { 9485, "de106c95b3ddc49aac997992ec6aa8c18f89fedc5947a3e6a2e47e47a3fa033d" },
- { 9710, "dff92af071ec0e388fc57e46599551d9cf885aa88055d3384fb10a7e4b8e40f4" },
- { 15894, "51999fe53c445d131790439000940279df797ddd779049f5776bb7a01f576e5d" },
- { 22500, "ad7c84ac33fb8cf0aa914be95be26f907f91493efa94285621efc2985cae560a" },
- { 27850, "2b368d553dbf373c0916c17368afd5f7da77c332ce990597f985ccb9215962e9" },
- { 33050, "e309a7dba6413ce8b2ef47c86115f9c2a45c47870296587f07ddd143441c63d4" },
- { 36905, "07f894174d20da58e583e8cb28e7ffc2705209531ffdec380de1e8647c73fd09" },
- { 40175, "322e6b97eb53c70a67c379a3e2094c896e932301deed57cb2c898538f492e00b" },
- };
 
 } // CryptoNote

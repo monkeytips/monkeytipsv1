@@ -83,6 +83,7 @@ Crypto::Hash parsePaymentId(const std::string& paymentIdStr) {
 
   Crypto::Hash paymentId;
   bool r = Common::podFromHex(paymentIdStr, paymentId);
+  if (r) {}
   assert(r);
 
   return paymentId;
@@ -278,6 +279,18 @@ void validateAddresses(const std::vector<std::string>& addresses, const CryptoNo
       logger(Logging::WARNING, Logging::BRIGHT_YELLOW) << "Can't validate address " << address;
       throw std::system_error(make_error_code(CryptoNote::error::BAD_ADDRESS));
     }
+  }
+}
+
+void validateMixin(const uint32_t mixin, Logging::LoggerRef logger) {
+  if (mixin < CryptoNote::parameters::MINIMUM_MIXIN_V1) {
+    logger(Logging::WARNING, Logging::BRIGHT_YELLOW) << "Mixin " << mixin
+      << " under minimum threshold " << CryptoNote::parameters::MINIMUM_MIXIN_V1;
+    throw std::system_error(make_error_code(CryptoNote::error::MIXIN_BELOW_THRESHOLD));
+  } else if (mixin > CryptoNote::parameters::MAXIMUM_MIXIN_V1) {
+    logger(Logging::WARNING, Logging::BRIGHT_YELLOW) << "Mixin " << mixin
+      << " above maximum threshold " << CryptoNote::parameters::MAXIMUM_MIXIN_V1;
+    throw std::system_error(make_error_code(CryptoNote::error::MIXIN_ABOVE_THRESHOLD));
   }
 }
 
@@ -916,6 +929,8 @@ std::error_code WalletService::sendTransaction(const SendTransaction::Request& r
       validateAddresses({ request.changeAddress }, currency, logger);
     }
 
+    validateMixin(request.anonymity, logger);
+
     CryptoNote::TransactionParameters sendParams;
     if (!request.paymentId.empty()) {
       addPaymentIdToExtra(request.paymentId, sendParams.extra);
@@ -1208,7 +1223,7 @@ void WalletService::replaceWithNewWallet(const Crypto::SecretKey& viewSecretKey)
 
     if (!boost::filesystem::exists(backup)) {
       boost::filesystem::rename(config.walletFile, backup);
-      logger(Logging::DEBUGGING) << "Walled file '" << config.walletFile  << "' backed up to '" << backup << '\'';
+      logger(Logging::DEBUGGING) << "Wallet file '" << config.walletFile  << "' backed up to '" << backup << '\'';
       break;
     }
   }

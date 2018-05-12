@@ -160,6 +160,8 @@ void NodeRpcProxy::workerThread(const INode::Callback& initialized_callback) {
       m_cv_initialized.notify_all();
     }
 
+    updateNodeStatus();
+
     initialized_callback(std::error_code());
 
     contextGroup.spawn([this]() {
@@ -461,8 +463,7 @@ void NodeRpcProxy::getBlocks(const std::vector<uint32_t>& blockHeights, std::vec
     return;
   }
 
-  // TODO NOT IMPLEMENTED
-  callback(std::error_code());
+  scheduleRequest(std::bind(&NodeRpcProxy::doGetBlocksByHeight, this, std::cref(blockHeights), std::ref(blocks)), callback);
 }
 
 void NodeRpcProxy::getBlocks(const std::vector<Crypto::Hash>& blockHashes, std::vector<BlockDetails>& blocks, const Callback& callback) {
@@ -472,7 +473,17 @@ void NodeRpcProxy::getBlocks(const std::vector<Crypto::Hash>& blockHashes, std::
     return;
   }
 
-  scheduleRequest(std::bind(&NodeRpcProxy::doGetBlocks, this, std::cref(blockHashes), std::ref(blocks)), callback);
+  scheduleRequest(std::bind(&NodeRpcProxy::doGetBlocksByHash, this, std::cref(blockHashes), std::ref(blocks)), callback);
+}
+
+void NodeRpcProxy::getBlock(const uint32_t blockHeight, BlockDetails &block, const Callback& callback) {
+  std::lock_guard<std::mutex> lock(m_mutex);
+  if (m_state != STATE_INITIALIZED) {
+    callback(make_error_code(error::NOT_INITIALIZED));
+    return;
+  }
+
+  scheduleRequest(std::bind(&NodeRpcProxy::doGetBlock, this, blockHeight, std::ref(block)), callback);
 }
 
 void NodeRpcProxy::getTransactions(const std::vector<Crypto::Hash>& transactionHashes, std::vector<TransactionDetails>& transactions, const Callback& callback) {
@@ -643,7 +654,24 @@ std::error_code NodeRpcProxy::doGetPoolSymmetricDifference(std::vector<Crypto::H
   return ec;
 }
 
-std::error_code NodeRpcProxy::doGetBlocks(const std::vector<Crypto::Hash>& blockHashes, std::vector<BlockDetails>& blocks) {
+std::error_code NodeRpcProxy::doGetBlocksByHeight(const std::vector<uint32_t>& blockHeights, std::vector<std::vector<BlockDetails>>& blocks) {
+  COMMAND_RPC_GET_BLOCKS_DETAILS_BY_HEIGHTS::request req = AUTO_VAL_INIT(req);
+  COMMAND_RPC_GET_BLOCKS_DETAILS_BY_HEIGHTS::response resp = AUTO_VAL_INIT(resp);
+
+  req.blockHeights = blockHeights;
+
+  std::error_code ec = binaryCommand("/get_blocks_details_by_heights.bin", req, resp);
+  if (ec) {
+    return ec;
+  }
+
+  auto tmp = std::move(resp.blocks);
+  blocks.push_back(tmp);
+
+  return ec;
+}
+
+std::error_code NodeRpcProxy::doGetBlocksByHash(const std::vector<Crypto::Hash>& blockHashes, std::vector<BlockDetails>& blocks) {
   COMMAND_RPC_GET_BLOCKS_DETAILS_BY_HASHES::request req = AUTO_VAL_INIT(req);
   COMMAND_RPC_GET_BLOCKS_DETAILS_BY_HASHES::response resp = AUTO_VAL_INIT(resp);
 
@@ -655,6 +683,23 @@ std::error_code NodeRpcProxy::doGetBlocks(const std::vector<Crypto::Hash>& block
   }
 
   blocks = std::move(resp.blocks);
+  return ec;
+}
+
+std::error_code NodeRpcProxy::doGetBlock(const uint32_t blockHeight, BlockDetails& block) {
+  COMMAND_RPC_GET_BLOCK_DETAILS_BY_HEIGHT::request req = AUTO_VAL_INIT(req);
+  COMMAND_RPC_GET_BLOCK_DETAILS_BY_HEIGHT::response resp = AUTO_VAL_INIT(resp);
+
+  req.blockHeight = blockHeight;
+
+  std::error_code ec = binaryCommand("/get_block_details_by_height.bin", req, resp);
+
+  if (ec) {
+    return ec;
+  }
+
+  block = std::move(resp.block);
+
   return ec;
 }
 

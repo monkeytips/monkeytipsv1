@@ -1,20 +1,36 @@
 cmake_minimum_required(VERSION 2.8.6)
 
 set(VERSION "0.1")
-# Packaged from commit 2311636113488363b50cfa907ab937408048511a
-set(COMMIT 2311636)
-set(REFS " (tag: v1.0.2)")
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CMAKE_CONFIGURATION_TYPES Debug RelWithDebInfo Release CACHE TYPE INTERNAL)
-set(CMAKE_SKIP_INSTALL_RULES ON)
+set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build, options are: Debug, Release, RelWithDebInfo")
+set(CMAKE_SKIP_INSTALL_RULES OFF)
 set(CMAKE_SKIP_PACKAGE_ALL_DEPENDENCY ON)
 set(CMAKE_SUPPRESS_REGENERATION ON)
-enable_testing()
+set(DO_TESTS ON CACHE STRING "Spend time making tests? Defaults to ON")
+set(STATIC ON CACHE BOOL "Link libraries statically")
+
+set(ENABLE_AVX OFF CACHE STRING "Enable RocksDB AVX/AVX2 support detection? Defaults to OFF")
+set(ENABLE_LEAF_FRAME OFF CACHE STRING "Enable RocksDB OMIT_LEAF_FRAME_POINTER detection? Defaults to OFF")
+set(ENABLE_SSE42 OFF CACHE STRING "Enable RocksDB SSE4.2 support detection? Defaults to OFF")
+set(ENABLE_THREAD_LOCAL OFF CACHE STRING "Enable RocksDB THREAD_LOCAL support detection? Defaults to OFF")
+set(ENABLE_SYNC_FILE_RANGE_WRITE OFF CACHE STRING "Enable RocksDB SYNC_FILE_RANGE_WRITE support detection? Defaults to OFF")
+set(ENABLE_PTHREAD_MUTEX_ADAPTIVE_NP OFF CACHE STRING "Enable RocksDB PTHREAD_MUTEX_ADAPTIVE_NP support detection? Defaults to OFF")
+set(ENABLE_MALLOC_USABLE_SIZE OFF CACHE STRING "Enable RocksDB MALLOC_USABLE_SIZE support detection? Defaults to OFF")
+set(ENABLE_SCHED_GETCPU OFF CACHE STRING "Enable RocksDB SCHED_GETCPU support detection? Defaults to OFF")
+
+if(DO_TESTS)
+  message(STATUS "BUILD TESTS: enabled")
+  enable_testing()
+else()
+  message(STATUS "BUILD TESTS: disabled")
+endif()
+
 # copy CTestCustom.cmake to build dir to disable long running tests in 'make test'
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CTestCustom.cmake ${CMAKE_CURRENT_BINARY_DIR})
 
-project(Worktips)
+project(worktips)
 
 include_directories(include src external "${CMAKE_CURRENT_BINARY_DIR}/version")
 if(APPLE)
@@ -24,6 +40,7 @@ endif()
 
 if(MSVC)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/Platform/Windows)
+set(STATIC ON)
 elseif(APPLE)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/Platform/OSX)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/Platform/Posix)
@@ -31,8 +48,6 @@ else()
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/Platform/Linux)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/Platform/Posix)
 endif()
-
-set(STATIC ${MSVC} CACHE BOOL "Link libraries statically")
 
 if(MSVC)
   add_definitions("/bigobj /MP /W3 /GS- /D_CRT_SECURE_NO_WARNINGS /wd4996 /wd4345 /D_WIN32_WINNT=0x0600 /DWIN32_LEAN_AND_MEAN /DGTEST_HAS_TR1_TUPLE=0 /D_VARIADIC_MAX=8 /D__SSE4_1__")
@@ -49,7 +64,7 @@ else()
     # Since glibc 2.20 _BSD_SOURCE is deprecated, this macro is recomended instead
     add_definitions("-D_DEFAULT_SOURCE -D_GNU_SOURCE")
   endif()
-  set(ARCH native CACHE STRING "CPU to build for: -march value or default")
+  set(ARCH default CACHE STRING "CPU to build for: -march value or default")
   if("${ARCH}" STREQUAL "default")
     set(ARCH_FLAG "")
   else()
@@ -155,4 +170,15 @@ endif()
 
 add_subdirectory(external)
 add_subdirectory(src)
-add_subdirectory(tests)
+
+if(DO_TESTS)
+  add_subdirectory(tests)
+endif()
+
+## We need to setup the RocksDB build environment to match our system
+if(NOT MSVC)
+  execute_process(
+    COMMAND cmake ${CMAKE_CURRENT_SOURCE_DIR}/external/rocksdb -DWITH_GFLAGS=0 -B${PROJECT_BINARY_DIR}/rocksdb
+  )
+  set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${PROJECT_BINARY_DIR}/rocksdb/librocksdb.a")
+endif()
