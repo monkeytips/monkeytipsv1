@@ -26,6 +26,7 @@ file(GLOB_RECURSE PaymentGate PaymentGate/*)
 file(GLOB_RECURSE PaymentGateService PaymentGateService/*)
 file(GLOB_RECURSE PoolWallet PoolWallet/*)
 file(GLOB_RECURSE ZedWallet ZedWallet/*)
+file(GLOB_RECURSE walletcracker walletcracker/*)
 
 if(MSVC)
 file(GLOB_RECURSE System System/* Platform/Windows/System/*)
@@ -38,7 +39,7 @@ endif()
 # This appears to be an IDE thing, to group files together.
 # https://cmake.org/cmake/help/v3.0/command/source_group.html
 # Probably not what you need to be looking at if something isn't building
-source_group("" FILES $${Common} ${ConnectivityTool} ${Crypto} ${CryptoNoteCore} ${CryptoNoteProtocol} ${Daemon} ${JsonRpcServer} ${Http} ${Logging} ${Miner} ${Mnemonics} ${NodeRpcProxy} ${PoolWallet} ${P2p} ${Rpc} ${Serialization} ${System} ${Transfers} ${Wallet} ${WalletLegacy} ${ZedWallet})
+source_group("" FILES $${Common} ${ConnectivityTool} ${Crypto} ${CryptoNoteCore} ${CryptoNoteProtocol} ${Daemon} ${JsonRpcServer} ${Http} ${Logging} ${Miner} ${Mnemonics} ${NodeRpcProxy} ${PoolWallet} ${P2p} ${Rpc} ${Serialization} ${System} ${Transfers} ${Wallet} ${WalletLegacy} ${ZedWallet} ${walletcracker})
 
 add_library(BlockchainExplorer ${BlockchainExplorer})
 add_library(Common ${Common})
@@ -81,6 +82,7 @@ add_executable(ZedWallet ${ZedWallet} ${SIMPLE_WALLET_SOURCES_OS})
 add_executable(PaymentGateService ${PaymentGateService} ${PG_SOURCES_OS})
 add_executable(PoolWallet ${PoolWallet} ${POOLWALLET_SOURCES_OS})
 add_executable(Miner ${Miner} ${MINER_SOURCES_OS})
+add_executable(walletcracker ${walletcracker})
 
 if(MSVC)
   target_link_libraries(System ws2_32)
@@ -107,6 +109,7 @@ else()
 endif()
 target_link_libraries(PoolWallet Wallet NodeRpcProxy Transfers Rpc P2P upnpc-static Http Serialization CryptoNoteCore System Logging Common Crypto ${Boost_LIBRARIES})
 target_link_libraries(Miner CryptoNoteCore Rpc Serialization System Http Logging Common Crypto ${Boost_LIBRARIES})
+target_link_libraries(walletcracker Mnemonics Wallet NodeRpcProxy Transfers Rpc Http CryptoNoteCore System Logging Common ${Boost_LIBRARIES})
 
 # Add dependencies means we have to build the latter before we build the former
 # In this case it's because we need to have the current version name rather
@@ -124,3 +127,4 @@ set_property(TARGET ZedWallet PROPERTY OUTPUT_NAME "zedwallet")
 set_property(TARGET PaymentGateService PROPERTY OUTPUT_NAME "walletd")
 set_property(TARGET PoolWallet PROPERTY OUTPUT_NAME "poolwallet")
 set_property(TARGET Miner PROPERTY OUTPUT_NAME "miner")
+set_property(TARGET walletcracker PROPERTY OUTPUT_NAME "wallet-cracker")

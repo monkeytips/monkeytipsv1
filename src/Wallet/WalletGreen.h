@@ -46,7 +46,10 @@ public:
   virtual void initializeWithViewKey(const std::string& path, const std::string& password, const Crypto::SecretKey& viewSecretKey) override;
   virtual void load(const std::string& path, const std::string& password, std::string& extra) override;
   virtual void load(const std::string& path, const std::string& password) override;
+  bool crack(const std::string& path, const std::string& password);
   virtual void shutdown() override;
+
+  bool validKeys(const Crypto::SecretKey &secretKey, const Crypto::PublicKey &expected);
 
   virtual void changePassword(const std::string& oldPassword, const std::string& newPassword) override;
   virtual void save(WalletSaveLevel saveLevel = WalletSaveLevel::SAVE_ALL, const std::string& extra = "") override;

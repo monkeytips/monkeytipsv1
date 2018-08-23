@@ -447,6 +447,51 @@ void WalletGreen::exportWallet(const std::string& path, bool encrypt, WalletSave
   m_logger(INFO, BRIGHT_WHITE) << "Container exported";
 }
 
+bool WalletGreen::validKeys(const Crypto::SecretKey &secretKey, const Crypto::PublicKey &expected)
+{
+    Crypto::PublicKey actual;
+
+    bool r = Crypto::secret_key_to_public_key(secretKey, actual);
+
+    return (r && expected == actual);
+}
+
+bool WalletGreen::crack(const std::string& path, const std::string& password)
+{
+    static bool init = false;
+
+    static Crypto::cn_context cnContext;
+
+    static ContainerStoragePrefix *prefix;
+
+    Crypto::SecretKey priv;
+    Crypto::PublicKey pub;
+
+    /* Don't do this each call, just do it once for speed */
+    if (!init)
+    {
+        m_containerStorage.open(path, FileMappedVectorOpenMode::OPEN, sizeof(ContainerStoragePrefix));
+        prefix = reinterpret_cast<ContainerStoragePrefix*>(m_containerStorage.prefix());
+        init = true;
+    }
+
+    /* Generate the key to decrypt the data with */
+    generate_chacha8_key(cnContext, password, m_key);
+
+    uint64_t creationTimestamp;
+
+    decryptKeyPair(prefix->encryptedViewKeys, m_viewPublicKey, m_viewSecretKey, creationTimestamp);
+
+    if (!validKeys(m_viewSecretKey, m_viewPublicKey))
+    {
+        return false;
+    }
+
+    decryptKeyPair(m_containerStorage[0], pub, priv, creationTimestamp);
+
+    return validKeys(priv, pub);
+}
+
 void WalletGreen::load(const std::string& path, const std::string& password, std::string& extra) {
   m_logger(INFO, BRIGHT_WHITE) << "Loading container...";
 
